@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1f4e">
+<title>OLM Blues Easter Challenge ⚽</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#1a1f4e;--blue:#5b9bd5;--gold:#d4a843;--light:#e8eef7;--white:#fff;--green:#4caf50;--red:#e74c3c}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--navy);color:var(--white);min-height:100vh;padding-bottom:80px;overflow-x:hidden}
+.header{text-align:center;padding:15px 10px 10px;background:linear-gradient(135deg,#1a1f4e,#2a3070)}
+.badge{width:70px;height:70px;border-radius:50%;border:2px solid var(--gold);background:linear-gradient(135deg,#1a1f4e,#2a3070);display:inline-flex;align-items:center;justify-content:center;font-size:2em}
+.header h1{font-size:1.1em;margin:6px 0 2px;color:var(--gold)}
+.header p{font-size:.75em;color:var(--blue);opacity:.9}
+.header .welcome{font-size:.85em;color:var(--gold);margin-top:4px}
+.countdown{background:linear-gradient(135deg,var(--gold),#b8912e);color:var(--navy);text-align:center;padding:10px;font-weight:700;font-size:.9em;border-radius:10px;margin:10px 15px}
+.countdown span{font-size:1.3em;display:block}
+.tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:#12163a;border-top:2px solid var(--gold);z-index:100}
+.tab{flex:1;text-align:center;padding:8px 4px;font-size:.65em;color:var(--blue);cursor:pointer;transition:.2s}
+.tab.active{color:var(--gold);background:rgba(212,168,67,.1)}
+.tab div{font-size:1.8em;margin-bottom:2px}
+.page{display:none;padding:10px 15px 20px}.page.active{display:block}
+.card{background:rgba(91,155,213,.1);border:1px solid rgba(91,155,213,.2);border-radius:12px;padding:12px;margin-bottom:10px}
+.drill-select{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px}
+.drill-btn{background:rgba(91,155,213,.1);border:1px solid rgba(91,155,213,.2);border-radius:8px;padding:10px 6px;color:var(--white);font-size:.75em;cursor:pointer;text-align:center;transition:.2s}
+.drill-btn.selected{background:var(--gold);color:var(--navy);font-weight:700;border-color:var(--gold)}
+.drill-btn .emoji{font-size:1.3em;display:block;margin-bottom:3px}
+textarea,select,input[type=number]{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(91,155,213,.3);border-radius:8px;padding:10px;color:var(--white);font-size:.85em;margin-bottom:8px}
+textarea{height:50px;resize:none}
+select option{background:var(--navy);color:var(--white)}
+.btn-primary{width:100%;padding:14px;border:none;border-radius:10px;font-size:1em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--gold),#b8912e);color:var(--navy)}
+.btn-primary:active{transform:scale(.97)}.btn-primary:disabled{opacity:.4}
+.btn-secondary{width:100%;padding:10px;border:1px solid var(--blue);border-radius:10px;font-size:.85em;cursor:pointer;background:transparent;color:var(--blue);margin-top:8px}
+.btn-danger{width:100%;padding:10px;border:1px solid var(--red);border-radius:10px;font-size:.85em;cursor:pointer;background:transparent;color:var(--red);margin-top:8px}
+.leaderboard-item{display:flex;align-items:center;padding:10px;margin-bottom:6px;background:rgba(91,155,213,.1);border-radius:10px;border:1px solid rgba(91,155,213,.15);cursor:pointer}
+.leaderboard-item.top3{border-color:var(--gold);background:rgba(212,168,67,.1)}
+.leaderboard-item.first{border-color:var(--gold);background:linear-gradient(135deg,rgba(212,168,67,.2),rgba(212,168,67,.05));border-width:2px}
+.lb-rank{font-size:1.3em;width:35px;text-align:center;font-weight:700}.lb-rank.gold{color:var(--gold)}
+.lb-info{flex:1;margin-left:8px}.lb-name{font-weight:700;font-size:.85em}
+.lb-name .you{font-size:.7em;color:var(--green);margin-left:4px}
+.lb-stats{font-size:.7em;color:var(--blue);margin-top:2px}
+.lb-streak{text-align:right;font-size:.75em}.lb-streak .num{font-size:1.4em;font-weight:700;color:var(--gold);display:block}
+.streak-bar{display:flex;gap:3px;flex-wrap:wrap}
+.streak-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55em;border:1px solid rgba(91,155,213,.3)}
+.streak-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.streak-dot.missed{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.3)}
+.streak-dot.today{border-color:var(--gold);border-width:2px}
+.streak-dot.future{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:rgba(255,255,255,.15)}
+.drill-card{background:rgba(91,155,213,.1);border:1px solid rgba(91,155,213,.2);border-radius:12px;padding:12px;margin-bottom:10px}
+.drill-card h4{color:var(--gold);font-size:.85em;margin-bottom:4px}
+.drill-card p{font-size:.75em;color:var(--light);line-height:1.4;margin-bottom:6px}
+.drill-card a{display:inline-block;background:var(--blue);color:var(--navy);padding:6px 12px;border-radius:6px;text-decoration:none;font-size:.75em;font-weight:700}
+.history-item{display:flex;align-items:center;padding:8px;margin-bottom:4px;background:rgba(91,155,213,.05);border-radius:8px;font-size:.75em}
+.history-item .date{color:var(--gold);min-width:45px;font-weight:700}
+.history-item .detail{flex:1;margin-left:8px;color:var(--light)}
+.history-item .actions{display:flex;gap:4px}
+.history-item .actions button{background:none;border:none;font-size:1em;cursor:pointer;padding:2px}
+.prize-banner{background:linear-gradient(135deg,var(--gold),#b8912e);color:var(--navy);text-align:center;padding:12px;border-radius:10px;margin:10px 0;font-weight:700}
+.prize-banner .big{font-size:1.5em;display:block}
+.section-title{color:var(--gold);font-size:.85em;font-weight:700;margin:15px 0 8px;text-transform:uppercase;letter-spacing:1px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700;font-size:.9em;z-index:200;display:none;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.3);min-width:250px}
+.toast.error{background:var(--navy);border:2px solid var(--red)}
+.profile-header{text-align:center;padding:10px 0}
+.profile-header .big-emoji{font-size:3em}
+.profile-header h2{color:var(--gold);margin:4px 0}
+.profile-header .stats{display:flex;justify-content:center;gap:20px;margin-top:8px}
+.stat{text-align:center}.stat .num{font-size:1.5em;font-weight:700;color:var(--blue);display:block}
+.stat .label{font-size:.65em;color:var(--light)}
+.tips{font-size:.75em;color:var(--light);line-height:1.5;padding:8px;background:rgba(91,155,213,.05);border-radius:8px}
+.tips strong{color:var(--gold)}
+.setup-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:20px;text-align:center}
+.setup-screen h2{color:var(--gold);margin:15px 0 5px;font-size:1.2em}
+.setup-screen p{color:var(--blue);font-size:.8em;margin-bottom:15px}
+.player-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:350px}
+.player-grid .player-btn{background:rgba(91,155,213,.15);border:1px solid rgba(91,155,213,.3);border-radius:10px;padding:12px 6px;color:var(--white);font-size:.75em;cursor:pointer;text-align:center;transition:.2s}
+.player-grid .player-btn:active{transform:scale(.95)}
+.player-grid .player-btn .emoji{font-size:1.6em;display:block;margin-bottom:4px}
+.player-grid .player-btn.coach{background:rgba(212,168,67,.15);border-color:var(--gold)}
+.pin-setup{max-width:280px;width:100%;margin-top:10px}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin:15px 0}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--blue);background:transparent;transition:.2s}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:0 auto}
+.pin-key{background:rgba(91,155,213,.15);border:1px solid rgba(91,155,213,.3);border-radius:10px;padding:14px;font-size:1.3em;color:var(--white);cursor:pointer;text-align:center;font-weight:700;transition:.2s}
+.pin-key:active{background:var(--gold);color:var(--navy)}
+.date-select{display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:center}
+.date-select button{background:rgba(91,155,213,.15);border:1px solid rgba(91,155,213,.3);border-radius:8px;padding:8px 12px;color:var(--white);cursor:pointer;font-size:1em}
+.date-select .date-label{color:var(--gold);font-weight:700;font-size:.9em;min-width:120px;text-align:center}
+.date-select .today-tag{font-size:.65em;color:var(--green);display:block}
+.admin-card{background:rgba(91,155,213,.1);border:1px solid rgba(91,155,213,.2);border-radius:12px;padding:12px;margin-bottom:10px}
+.admin-card h4{color:var(--gold);font-size:.85em;margin-bottom:8px}
+.admin-player-row{display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(91,155,213,.1);font-size:.8em}
+.admin-player-row:last-child{border:none}
+.admin-player-row .name{flex:1}
+.admin-player-row button{background:rgba(91,155,213,.15);border:1px solid rgba(91,155,213,.3);border-radius:6px;padding:4px 10px;color:var(--white);cursor:pointer;font-size:.8em;margin-left:4px}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--navy);border:1px solid var(--gold);border-radius:12px;padding:20px;max-width:340px;width:100%;text-align:center}
+.modal h3{color:var(--gold);margin-bottom:10px;font-size:1em}
+.modal p{color:var(--light);font-size:.8em;margin-bottom:12px}
+.modal-actions{display:flex;gap:8px;margin-top:12px}
+.modal-actions button{flex:1;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;font-size:.85em}
+.modal-actions .confirm{background:var(--gold);color:var(--navy);border:none}
+.modal-actions .cancel{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+.emoji-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
+.emoji-pick{font-size:1.5em;padding:8px;border-radius:8px;border:2px solid transparent;cursor:pointer;text-align:center;background:rgba(91,155,213,.1)}
+.emoji-pick:hover,.emoji-pick.selected{border-color:var(--gold);background:rgba(212,168,67,.2)}
+.duration-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.duration-row label{color:var(--light);font-size:.8em;white-space:nowrap}
+.duration-row input{width:80px;text-align:center}
+.duration-row span{color:var(--blue);font-size:.8em}
+/* Animations */
+@keyframes celebrateIn{0%{transform:scale(0) rotate(-10deg);opacity:0}50%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes confetti{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes streakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.celebrate{animation:celebrateIn .5s ease-out}
+.streak-anim{animation:streakPulse .4s ease-in-out 3}
+.confetti-piece{position:fixed;top:-10px;width:10px;height:10px;border-radius:2px;z-index:250;animation:confetti 2s ease-in forwards;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="badge">⚽</div>
+  <h1>⚽ OLM Girls Blues</h1>
+  <p>U12s Easter Practice Challenge 2026</p>
+  <div class="welcome" id="welcomeMsg"></div>
+  <div id="syncStatus" style="font-size:.6em;margin-top:2px"></div>
+</div>
+<div class="countdown" id="countdown"></div>
+<div class="toast" id="toast"></div>
+<div id="modalContainer"></div>
+
+<div class="page" id="page-setup"><div class="setup-screen">
+  <h2>👋 Who Are You?</h2><p>Pick your name to get started</p>
+  <div class="player-grid" id="setupPlayerGrid"></div>
+</div></div>
+
+<div class="page" id="page-emoji-pick"><div class="setup-screen">
+  <div style="font-size:3em" id="emojiPickCurrent">⚽</div>
+  <h2 id="emojiPickName"></h2><p>Pick your emoji!</p>
+  <div class="emoji-picker" id="emojiPicker"></div>
+  <button class="btn-primary" id="emojiConfirmBtn" onclick="confirmEmoji()" style="max-width:280px" disabled>Choose this one!</button>
+</div></div>
+
+<div class="page" id="page-pin-create"><div class="setup-screen">
+  <div style="font-size:3em" id="pinCreateEmoji"></div>
+  <h2 id="pinCreateName"></h2><p id="pinCreateMsg">Choose a 4-digit PIN so only you can log your practice</p>
+  <div class="pin-setup"><div class="pin-dots" id="pinCreateDots"></div><div class="pin-pad" id="pinCreatePad"></div></div>
+</div></div>
+
+<div class="page" id="page-pin-enter"><div class="setup-screen">
+  <div style="font-size:3em" id="pinEnterEmoji"></div>
+  <h2 id="pinEnterName"></h2><p id="pinEnterMsg">Enter your 4-digit PIN</p>
+  <div class="pin-setup"><div class="pin-dots" id="pinEnterDots"></div><div class="pin-pad" id="pinEnterPad"></div>
+  <button class="btn-secondary" onclick="switchPlayer()" style="margin-top:15px">🔄 Not you? Switch player</button></div>
+</div></div>
+
+<div class="page" id="page-log">
+  <div class="section-title">📅 What Day?</div>
+  <div class="date-select">
+    <button onclick="changeDate(-1)">◀</button>
+    <div><span class="date-label" id="dateLabel"></span><span class="today-tag" id="todayTag"></span></div>
+    <button onclick="changeDate(1)">▶</button>
+  </div>
+  <div class="section-title">⚽ What Did You Work On? <span style="font-size:.75em;color:var(--blue)">(pick all that apply)</span></div>
+  <div class="drill-select" id="drillSelect"></div>
+  <div class="section-title">⏱️ How Long?</div>
+  <div class="duration-row">
+    <label>I practiced for</label>
+    <input type="number" id="durationInput" min="5" max="120" value="15" style="width:70px;text-align:center">
+    <span>minutes</span>
+  </div>
+  <textarea id="noteInput" placeholder="Optional: Add a note about your session..."></textarea>
+  <button class="btn-primary" id="logBtn" onclick="logPractice()" disabled>✅ Log Practice!</button>
+  <div id="alreadyLogged" style="display:none;text-align:center;margin-top:10px;font-size:.8em;color:var(--green)"></div>
+</div>
+
+<div class="page" id="page-leaderboard">
+  <div class="prize-banner"><span class="big">🏆</span>Train 10+ days = Prize!<br><span style="font-size:.85em">🥇 1st place = BIGGER prize!</span></div>
+  <div class="section-title">🏅 Leaderboard</div>
+  <div id="leaderboard"></div>
+</div>
+
+<div class="page" id="page-profile"><div id="profileContent"></div></div>
+
+<div class="page" id="page-drills">
+  <div class="section-title">🎥 This Week's Challenge</div>
+  <div class="drill-card"><h4>🎯 Receiving & Passing</h4>
+    <p><strong>What you need:</strong> 1 football, a timer, cones & a partner</p>
+    <p><strong>Step 1:</strong> Practice variation 1 & 2<br><strong>Step 2:</strong> 1 min challenge – 1 point per pass × 3<br><strong>Step 3:</strong> Mix ground + aerial feeds × 3</p>
+    <p>💡 <strong>Tips:</strong> Scan before receiving • Move sharply to ball • Lock ankle when passing</p>
+    <a href="https://vimeo.com/1175457438/3ff628ac71?fl=tl&fe=ec" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="section-title">⚽ Dribbling</div>
+  <div class="drill-card"><h4>⚽ 15 Dribbling Drills for Kids</h4>
+    <p>Improve ball control, coordination and confidence. Learn to change direction, keep possession and attack space. Covers basic control, cone technique, and change of direction drills.</p>
+    <a href="https://www.youtube.com/watch?v=YqAyi27WejY" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="section-title">🧠 Ball Mastery & Small Spaces</div>
+  <div class="drill-card"><h4>🧠 9 Easy Drills for Small Spaces</h4>
+    <p>Perfect for practicing at home, in the backyard, or in tight areas. Develop better touch, faster feet and quicker reactions. Covers close control, fast footwork, and tight space dribbling.</p>
+    <a href="https://www.youtube.com/watch?v=QN08p33Q1JY" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="section-title">🎯 Shooting</div>
+  <div class="drill-card"><h4>🎯 5 Essential Shooting Drills</h4>
+    <p>Improve accuracy, power and confidence in front of goal. Build proper technique, timing and balance. Covers technique basics, finishing inside the box, and shooting with power.</p>
+    <a href="https://www.youtube.com/watch?v=CVF_qsuac6E" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="section-title">🦶 First Touch</div>
+  <div class="drill-card"><h4>🦶 First Touch (Ground)</h4>
+    <p>Control the ball cleanly with your first touch on the ground.</p>
+    <a href="https://m.youtube.com/watch?v=WzwJDSNLLuk" target="_blank">▶️ Watch Video</a></div>
+  <div class="drill-card"><h4>🦶 First Touch (Air)</h4>
+    <p>Bring the ball down from the air with a soft, controlled touch.</p>
+    <p>⚠️ <strong>Note:</strong> Skip the heading parts of this drill — focus on chest and foot control only!</p>
+    <a href="https://m.youtube.com/watch?v=jvHnLQssXgY" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="section-title">🧤 Goalkeeping</div>
+  <div class="drill-card"><h4>🧤 Youth Goalkeeper Diving Drills</h4>
+    <p>At-home training session focusing on introducing diving to youth keepers. Learn to control your body and the ball with minimal equipment and a training partner.</p>
+    <a href="https://www.youtube.com/watch?v=TFh9qUOkM1M" target="_blank">▶️ Watch Video</a></div>
+  <div class="drill-card"><h4>🧤 Passing, Handling & Blocking</h4>
+    <p>Structured youth goalkeeper session covering passing technique and accuracy, clean catches and body shape for handling, and "k-star" and long barrier shapes for blocking close-range shots.</p>
+    <a href="https://www.youtube.com/watch?v=bKlB-sSlPIU" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="section-title">⚽ Ball Control</div>
+  <div class="drill-card"><h4>⚽ Ball Control & Movement</h4>
+    <p>Improve close control while moving with the ball at speed.</p>
+    <a href="https://m.youtube.com/watch?v=quDH7EgDWRI" target="_blank">▶️ Watch Video</a></div>
+
+  <div class="tips" style="margin-top:15px"><strong>💡 Can you spare 10 minutes a day?</strong><br>Little and often is the best way to improve. Even short sessions will really help. Let's see who comes back after Easter even sharper! 💪⚽<br><br><strong>#AttentionToDetail</strong></div>
+</div>
+
+<div class="page" id="page-admin"><div id="adminContent"></div></div>
+
+<div class="tabs" id="mainTabs" style="display:none"></div>
+
+<script>
+const PLAYERS=['Sophie','Sylvie','Annie','Eva','Chloe','Esme','Marnie','Hannah','Aminah','Orla','Layla','Rebecca','Collette'];
+const DEFAULT_EMOJIS=['⚡','🌟','💫','🔥','✨','💪','🎯','⭐','🌈','💎','🦋','🍀','👑'];
+const EMOJI_OPTIONS=['⚽','🌟','💫','🔥','✨','💪','🎯','⭐','🌈','💎','🦋','🍀','👑','🦄','🐝','🌸','🎀','⚡','🌙','🐬','🎵','🍩','🐾','🌺'];
+const COACH={name:'Coach',emoji:'🏆'};
+const DRILLS=[
+  {id:'dribbling',emoji:'⚽',name:'Dribbling'},{id:'shooting',emoji:'🎯',name:'Shooting'},
+  {id:'passing',emoji:'🤝',name:'Passing'},{id:'fitness',emoji:'🏃',name:'Fitness'},
+  {id:'skills',emoji:'🧠',name:'Ball Mastery'},{id:'first-touch',emoji:'🦶',name:'First Touch'},
+  {id:'receiving',emoji:'🎯',name:'Receiving'},{id:'goalkeeping',emoji:'🧤',name:'Goalkeeping'},{id:'other',emoji:'⚽',name:'Other'}
+];
+const START=new Date('2026-04-03'),END=new Date('2026-04-19'),TOTAL_DAYS=17,PRIZE_TARGET=10;
+const K='olm-blues-v1',KP='olm-blues-pins',KU='olm-blues-user',KE='olm-blues-emojis';
+let currentUser=null,isCoach=false,selectedDrills=[],logDate=null,pendingPlayerIdx=-1;
+
+// Firebase
+const FIREBASE_CONFIG={apiKey:"AIzaSyAyiNJ-hNM2CnlcfcB-ZBUwyowym-gp80A",authDomain:"olm-blues.firebaseapp.com",databaseURL:"https://olm-blues-default-rtdb.europe-west1.firebasedatabase.app",projectId:"olm-blues"};
+let db=null,useFirebase=false;
+try{if(typeof firebase!=='undefined'){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();useFirebase=true}}catch(e){}
+
+let _cache={data:{},pins:{},emojis:{}};
+function getData(){return _cache.data}
+function saveData(d){_cache.data=d;localStorage.setItem(K,JSON.stringify(d));if(useFirebase)db.ref('practice').set(d)}
+function getPins(){return _cache.pins}
+function savePins(d){_cache.pins=d;localStorage.setItem(KP,JSON.stringify(d));if(useFirebase)db.ref('pins').set(d)}
+function getEmojis(){return _cache.emojis}
+function saveEmojis(d){_cache.emojis=d;localStorage.setItem(KE,JSON.stringify(d));if(useFirebase)db.ref('emojis').set(d)}
+function getEmoji(name){return getEmojis()[name]||DEFAULT_EMOJIS[PLAYERS.indexOf(name)]||'⚽'}
+function _loadLocal(){
+  try{_cache.data=JSON.parse(localStorage.getItem(K))||{}}catch(e){_cache.data={}}
+  try{_cache.pins=JSON.parse(localStorage.getItem(KP))||{}}catch(e){_cache.pins={}}
+  try{_cache.emojis=JSON.parse(localStorage.getItem(KE))||{}}catch(e){_cache.emojis={}}
+}
+_loadLocal();
+function _initFirebaseSync(){
+  if(!useFirebase)return;
+  db.ref('practice').on('value',snap=>{const d=snap.val()||{};_cache.data=d;localStorage.setItem(K,JSON.stringify(d));
+    if(currentUser){const lbPage=document.getElementById('page-leaderboard');if(lbPage.classList.contains('active'))renderLeaderboard();
+    const prPage=document.getElementById('page-profile');if(prPage.classList.contains('active')){const h=document.querySelector('.profile-header h2');if(h)showProfile(h.textContent.replace(/ \(You\)/,''))}}});
+  db.ref('pins').on('value',snap=>{const d=snap.val()||{};_cache.pins=d;localStorage.setItem(KP,JSON.stringify(d))});
+  db.ref('emojis').on('value',snap=>{const d=snap.val()||{};_cache.emojis=d;localStorage.setItem(KE,JSON.stringify(d))});
+}
+_initFirebaseSync();
+
+function getSavedUser(){return localStorage.getItem(KU)}
+function setSavedUser(u){localStorage.setItem(KU,u)}
+function clearSavedUser(){localStorage.removeItem(KU)}
+function ds(d){return d.toISOString().split('T')[0]}
+let _testDate=null;
+function today(){return ds(new Date())}
+function fmtDate(s){return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+function getPlayerDays(n){return Object.keys(getData()[n]||{}).sort()}
+function getStreak(n){
+  const days=getPlayerDays(n);if(!days.length)return 0;
+  const startDate=ds(START);let s=0,c=new Date(today()+'T12:00:00');
+  for(let i=0;i<TOTAL_DAYS;i++){const cd=ds(c);if(cd<startDate)break;if(days.includes(cd))s++;else if(cd<=today())break;c.setDate(c.getDate()-1);}return s;
+}
+function getChallengeDays(n){const sd=ds(START),ed=ds(END);return getPlayerDays(n).filter(d=>d>=sd&&d<=ed)}
+function getTotalDays(n){return getChallengeDays(n).length}
+function getTotalMinutes(n){const data=getData()[n]||{},sd=ds(START),ed=ds(END);return Object.entries(data).filter(([d])=>d>=sd&&d<=ed).reduce((s,[,e])=>s+(e.duration||15),0)}
+function hideAllPages(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))}
+
+// Animations
+function fireConfetti(type){
+  const themes={
+    default:{colors:['#d4a843','#5b9bd5','#4caf50','#e74c3c','#fff','#ff69b4'],count:30,chars:null},
+    football:{colors:['#4caf50','#fff','#d4a843'],count:25,chars:['⚽','⚽','⚽','🌟','💫']},
+    trophy:{colors:['#d4a843','#ffd700','#ff69b4'],count:30,chars:['🏆','🏆','🏆','⭐','🎉','👑']},
+    taylor:{colors:['#ff69b4','#c471ed','#f5af19','#ffd700','#fff'],count:40,chars:['💜','🎤','✨','🦋','💎','🌟','13','💜','🎶','👑']}
+  };
+  const t=themes[type]||themes.default;
+  for(let i=0;i<t.count;i++){const el=document.createElement('div');el.className='confetti-piece';
+    el.style.left=Math.random()*100+'vw';el.style.animationDelay=Math.random()*0.5+'s';
+    el.style.animationDuration=(1.5+Math.random())+'s';
+    if(t.chars){el.style.fontSize=(1+Math.random()*1.5)+'em';el.style.background='transparent';
+      el.style.width='auto';el.style.height='auto';el.textContent=t.chars[Math.floor(Math.random()*t.chars.length)]}
+    else{el.style.background=t.colors[Math.floor(Math.random()*t.colors.length)]}
+    document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
+}
+function showToast(m,err,dur){const t=document.getElementById('toast');t.innerHTML=m;t.className='toast celebrate'+(err?' error':'');t.style.display='block';setTimeout(()=>{t.style.display='none';t.className='toast'},dur||3500)}
+function revealPrize(el){el.innerHTML='🍫🍫🍫<br>A BAR OF CHOCOLATE!<br>🍫🍫🍫';el.style.fontSize='1.1em';el.style.textDecoration='none';el.onclick=null;fireConfetti('trophy')}
+
+// Modal
+function showModal(title,body,onConfirm,confirmText='Confirm'){
+  document.getElementById('modalContainer').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3>${title}</h3>${body}<div class="modal-actions">
+    <button class="cancel" onclick="closeModal()">Cancel</button>
+    <button class="confirm" id="modalConfirm">${confirmText}</button></div></div></div>`;
+  document.getElementById('modalConfirm').onclick=()=>{closeModal();onConfirm()};
+}
+function closeModal(){document.getElementById('modalContainer').innerHTML=''}
+
+// PIN pad
+function buildPinPad(padId,dotsId,onComplete){
+  let pin='';const dots=document.getElementById(dotsId),pad=document.getElementById(padId);
+  function rd(){dots.innerHTML=[0,1,2,3].map(i=>`<div class="pin-dot ${i<pin.length?'filled':''}"></div>`).join('')}
+  pad.innerHTML=[1,2,3,4,5,6,7,8,9,'⌫',0,''].map(v=>`<div class="pin-key" data-v="${v}">${v===''?' ':v}</div>`).join('');
+  pad.querySelectorAll('.pin-key').forEach(el=>{el.onclick=()=>{const v=el.dataset.v;
+    if(v==='⌫'){pin=pin.slice(0,-1);rd();return}if(v===''||pin.length>=4)return;
+    pin+=v;rd();if(pin.length===4)setTimeout(()=>{const p=pin;pin='';rd();onComplete(p)},200)}});rd();
+}
+
+// Setup & emoji picker
+function showSetup(){
+  hideAllPages();document.getElementById('page-setup').classList.add('active');
+  document.getElementById('mainTabs').style.display='none';document.getElementById('welcomeMsg').textContent='';
+  const grid=document.getElementById('setupPlayerGrid');
+  grid.innerHTML=PLAYERS.map((p,i)=>
+    `<div class="player-btn" onclick="pickPlayer(${i},'player')"><span class="emoji">${getEmoji(p)}</span>${p}</div>`
+  ).join('')+`<div class="player-btn coach" onclick="pickPlayer(-1,'coach')"><span class="emoji">🏆</span>Coach</div>`;
+}
+function pickPlayer(idx,role){
+  const name=role==='coach'?COACH.name:PLAYERS[idx];
+  const pins=getPins();
+  if(pins[name]){showPinEnter(idx,role);return}
+  // New player — pick emoji first (skip for coach)
+  if(role==='coach'){showPinCreate(idx,role);return}
+  pendingPlayerIdx=idx;showEmojiPicker(idx);
+}
+let pickedEmoji=null;
+function showEmojiPicker(idx){
+  hideAllPages();document.getElementById('page-emoji-pick').classList.add('active');
+  document.getElementById('emojiPickName').textContent=PLAYERS[idx];
+  pickedEmoji=null;document.getElementById('emojiConfirmBtn').disabled=true;
+  document.getElementById('emojiPickCurrent').textContent='❓';
+  document.getElementById('emojiPicker').innerHTML=EMOJI_OPTIONS.map(e=>
+    `<div class="emoji-pick" onclick="pickEmoji(this,'${e}')">${e}</div>`).join('');
+}
+function pickEmoji(el,e){
+  pickedEmoji=e;document.getElementById('emojiPickCurrent').textContent=e;
+  document.querySelectorAll('.emoji-pick').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');document.getElementById('emojiConfirmBtn').disabled=false;
+}
+function confirmEmoji(){
+  if(!pickedEmoji)return;
+  const em=getEmojis();em[PLAYERS[pendingPlayerIdx]]=pickedEmoji;saveEmojis(em);
+  showPinCreate(pendingPlayerIdx,'player');
+}
+
+function showPinCreate(idx,role){
+  const name=role==='coach'?COACH.name:PLAYERS[idx];
+  const emoji=role==='coach'?COACH.emoji:getEmoji(name);
+  hideAllPages();document.getElementById('page-pin-create').classList.add('active');
+  document.getElementById('pinCreateEmoji').textContent=emoji;
+  document.getElementById('pinCreateName').textContent=name;
+  document.getElementById('pinCreateMsg').textContent='Choose a 4-digit PIN';
+  let firstPin=null;
+  buildPinPad('pinCreatePad','pinCreateDots',pin=>{
+    if(!firstPin){firstPin=pin;document.getElementById('pinCreateMsg').textContent='Confirm your PIN — enter it again';return}
+    if(pin===firstPin){const pins=getPins();pins[name]=pin;savePins(pins);loginAs(idx,role)}
+    else{firstPin=null;document.getElementById('pinCreateMsg').textContent="PINs didn't match! Try again";showToast("❌ PINs didn't match",true)}
+  });
+}
+function showPinEnter(idx,role){
+  const name=role==='coach'?COACH.name:PLAYERS[idx];
+  const emoji=role==='coach'?COACH.emoji:getEmoji(name);
+  hideAllPages();document.getElementById('page-pin-enter').classList.add('active');
+  document.getElementById('pinEnterEmoji').textContent=emoji;
+  document.getElementById('pinEnterName').textContent=name;
+  document.getElementById('pinEnterMsg').textContent='Enter your 4-digit PIN';
+  let attempts=0;
+  buildPinPad('pinEnterPad','pinEnterDots',pin=>{
+    if(getPins()[name]===pin)loginAs(idx,role);
+    else{attempts++;if(attempts>=3){showToast('❌ Too many wrong attempts!',true);setTimeout(showSetup,1500)}
+    else{showToast('❌ Wrong PIN',true);document.getElementById('pinEnterMsg').textContent=`Wrong PIN! ${3-attempts} tries left`}}
+  });
+}
+function switchPlayer(){clearSavedUser();currentUser=null;isCoach=false;showSetup()}
+function loginAs(idx,role){
+  isCoach=role==='coach';currentUser=isCoach?COACH.name:PLAYERS[idx];setSavedUser(currentUser);
+  const emoji=isCoach?COACH.emoji:getEmoji(currentUser);
+  document.getElementById('welcomeMsg').textContent=`${emoji} ${currentUser}`;
+  buildTabs();document.getElementById('mainTabs').style.display='flex';
+  logDate=today();selectedDrills=[];renderDrills();updateDateLabel();updateCountdown();
+  showPage(isCoach?'leaderboard':'log');
+}
+
+// Tabs
+function buildTabs(){
+  const tabs=isCoach
+    ?[{id:'leaderboard',icon:'🏆',label:'Board'},{id:'profile',icon:'👤',label:'Players'},{id:'drills',icon:'🎥',label:'Drills'},{id:'admin',icon:'⚙️',label:'Admin'}]
+    :[{id:'log',icon:'📝',label:'Log'},{id:'leaderboard',icon:'🏆',label:'Board'},{id:'profile',icon:'👤',label:'Me'},{id:'drills',icon:'🎥',label:'Drills'}];
+  document.getElementById('mainTabs').innerHTML=tabs.map((t,i)=>
+    `<div class="tab${i===0?' active':''}" onclick="showPage('${t.id}')"><div>${t.icon}</div>${t.label}</div>`).join('');
+}
+function showPage(id){
+  hideAllPages();document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.includes(id==='log'?'Log':id==='leaderboard'?'Board':id==='profile'?(isCoach?'Players':'Me'):id==='drills'?'Drills':'Admin'))t.classList.add('active')});
+  if(id==='leaderboard')renderLeaderboard();
+  if(id==='profile'){if(isCoach)showProfile(PLAYERS[0]);else showProfile(currentUser)}
+  if(id==='admin')renderAdmin();
+}
+
+// Date picker
+function updateDateLabel(){
+  document.getElementById('dateLabel').textContent=fmtDate(logDate);
+  const tag=document.getElementById('todayTag');
+  tag.textContent=logDate===today()?'(Today)':logDate<today()?'(Catch-up)':'';
+  const data=getData(),entry=data[currentUser]?.[logDate];
+  const el=document.getElementById('alreadyLogged');
+  if(entry){el.style.display='block';
+    const drills=Array.isArray(entry.drills)?entry.drills.join(', '):entry.drill;
+    el.innerHTML=`✅ Logged: ${drills}${entry.duration?' ('+entry.duration+' min)':''}`;
+    document.getElementById('logBtn').textContent='🔄 Update Log';
+  }else{el.style.display='none';document.getElementById('logBtn').textContent='✅ Log Practice!'}
+  updateLogBtn();
+}
+function changeDate(dir){
+  const d=new Date(logDate+'T12:00:00');d.setDate(d.getDate()+dir);
+  const s=ds(d);if(s>today()||s<ds(START))return;logDate=s;updateDateLabel();
+}
+
+// Drills — multi-select
+function renderDrills(){
+  document.getElementById('drillSelect').innerHTML=DRILLS.map(d=>
+    `<div class="drill-btn ${selectedDrills.includes(d.id)?'selected':''}" onclick="toggleDrill('${d.id}')"><span class="emoji">${d.emoji}</span>${d.name}</div>`).join('');
+}
+function toggleDrill(id){
+  const i=selectedDrills.indexOf(id);if(i>=0)selectedDrills.splice(i,1);else selectedDrills.push(id);
+  renderDrills();updateLogBtn();
+}
+function updateLogBtn(){document.getElementById('logBtn').disabled=selectedDrills.length===0}
+
+// Log practice
+function logPractice(){
+  if(!currentUser||selectedDrills.length===0||isCoach)return;
+  const data=getData();if(!data[currentUser])data[currentUser]={};
+  const note=document.getElementById('noteInput').value.trim();
+  const duration=parseInt(document.getElementById('durationInput').value)||15;
+  const drillNames=selectedDrills.map(id=>DRILLS.find(d=>d.id===id).name);
+  data[currentUser][logDate]={drills:drillNames,drillIds:selectedDrills.slice(),note,duration,
+    time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+  saveData(data);document.getElementById('noteInput').value='';
+  const total=getTotalDays(currentUser),streak=getStreak(currentUser);
+  // Build celebration message with streak-specific animations
+  let msg=`✅ Logged ${drillNames.join(' + ')}!<br>⏱️ ${duration} minutes`;
+  if(logDate!==today())msg+=`<br>📅 ${fmtDate(logDate)}`;
+  let animType='default';
+  if(streak>=13){
+    msg+=`<br><span class="streak-anim" style="display:inline-block;font-size:1.4em">💜🎤 ${streak}-DAY STREAK! 🎤💜</span>`;
+    msg+='<br>✨ Taylor would be proud! ✨';
+    animType='taylor';
+  } else if(streak>=5){
+    msg+=`<br><span class="streak-anim" style="display:inline-block;font-size:1.3em">⚽🔥 ${streak}-day streak! 🔥⚽</span>`;
+    msg+='<br>Amazing — keep it going!';
+    animType='football';
+  } else if(streak>=3){
+    msg+=`<br><span class="streak-anim" style="display:inline-block;font-size:1.2em">🔥 ${streak}-day streak!</span>`;
+  } else if(streak>=1){
+    msg+=`<br>🔥 ${streak}-day streak${streak===1?' — great start!':' — keep going!'}`;
+  }
+  // Prize triggers on TOTAL DAYS, not streak
+  if(total>=PRIZE_TARGET){
+    if(total===PRIZE_TARGET){
+      msg+='<br><strong style="cursor:pointer;text-decoration:underline" onclick="revealPrize(this)">🏆🎉 YOU HAVE WON A PRIZE! Tap to reveal! 🎉🏆</strong>';
+      animType='trophy';
+    } else {
+      msg+='<br>🏆 Prize earned!';
+    }
+  }
+  fireConfetti(animType);if(animType!=='default')setTimeout(()=>fireConfetti(animType),800);
+  const toastDuration=total===PRIZE_TARGET?8000:3500;
+  showToast(msg,false,toastDuration);updateDateLabel();
+}
+
+// Countdown
+function updateCountdown(){
+  const now=new Date(),t=today(),el=document.getElementById('countdown'),sd=ds(START);
+  if(t<sd){const d=Math.ceil((START-now)/864e5);el.innerHTML=`Challenge starts in<span>🚀 ${d} day${d!==1?'s':''}</span>`}
+  else if(t>ds(END))el.innerHTML='<span>🏁 Challenge Complete!</span>Well done everyone!';
+  else{const left=Math.floor((END-new Date(t))/864e5)+1,dayNum=Math.floor((new Date(t)-START)/864e5)+1;
+    el.innerHTML=`Day ${dayNum} of ${TOTAL_DAYS}<span>⏰ ${left} day${left!==1?'s':''} left</span>`}
+}
+
+// Leaderboard
+function renderLeaderboard(){
+  const board=PLAYERS.map(p=>({name:p,emoji:getEmoji(p),total:getTotalDays(p),streak:getStreak(p),mins:getTotalMinutes(p)}))
+    .sort((a,b)=>b.total-a.total||b.mins-a.mins);
+  document.getElementById('leaderboard').innerHTML=board.map((p,i)=>{
+    const r=i+1,medal=r===1?'🥇':r===2?'🥈':r===3?'🥉':r,
+      prize=p.total>=PRIZE_TARGET?(r===1?' 🏆👑':' 🏆'):'',you=(!isCoach&&p.name===currentUser)?'<span class="you">(You)</span>':'';
+    return `<div class="leaderboard-item ${r===1&&p.total>0?'first':r<=3&&p.total>0?'top3':''}" onclick="showPage('profile');showProfile('${p.name}')">
+      <div class="lb-rank ${r<=3?'gold':''}">${medal}</div>
+      <div class="lb-info"><div class="lb-name">${p.emoji} ${p.name}${you}${prize}</div>
+        <div class="lb-stats">${p.total}/${TOTAL_DAYS} days • 🔥${p.streak} streak • ⏱️${p.mins}min</div></div>
+      <div class="lb-streak"><span class="num">${p.total}</span>days</div></div>`;
+  }).join('');
+}
+
+// Profile
+function showProfile(name){
+  if(!name)return;const idx=PLAYERS.indexOf(name);if(idx===-1)return;
+  const data=getData(),days=getPlayerDays(name),total=days.length,streak=getStreak(name),
+    remaining=Math.max(0,PRIZE_TARGET-total),mins=getTotalMinutes(name),emoji=getEmoji(name);
+  let cal='';const d=new Date(START);
+  for(let i=0;i<TOTAL_DAYS;i++){const s=ds(d),done=days.includes(s),isToday=s===today(),isFuture=s>today();
+    let cls=done?'done':isFuture?'future':'missed';if(isToday)cls+=' today';
+    cal+=`<div class="streak-dot ${cls}">${d.getDate()}</div>`;d.setDate(d.getDate()+1)}
+  let hist='';Object.entries(data[name]||{}).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([date,e])=>{
+    const drills=Array.isArray(e.drills)?e.drills.join(', '):(e.drill||'');
+    const durStr=e.duration?` (${e.duration}min)`:'';
+    const editBtn=isCoach?`<div class="actions"><button onclick="adminEditEntry('${name}','${date}')">✏️</button><button onclick="adminDeleteEntry('${name}','${date}')">🗑️</button></div>`:'';
+    hist+=`<div class="history-item"><div class="date">${fmtDate(date).split(',')[0]}</div>
+      <div class="detail">${drills}${durStr}${e.note?' — '+e.note:''}</div>${editBtn}</div>`;});
+  const isMe=!isCoach&&name===currentUser;
+  const navBtns=isCoach?`<div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">${PLAYERS.map(p=>
+    `<button style="flex:1;min-width:30px;padding:6px 2px;border-radius:6px;border:1px solid ${p===name?'var(--gold)':'rgba(91,155,213,.3)'};background:${p===name?'rgba(212,168,67,.2)':'transparent'};color:var(--white);cursor:pointer;font-size:.7em" onclick="showProfile('${p}')">${getEmoji(p)}</button>`
+  ).join('')}</div>`:'';
+  document.getElementById('profileContent').innerHTML=`${navBtns}
+    <div class="profile-header"><div class="big-emoji">${emoji}</div><h2>${name}${isMe?' <span style="font-size:.5em;color:var(--green)">(You)</span>':''}</h2>
+      <div class="stats"><div class="stat"><span class="num">${total}</span><span class="label">Days</span></div>
+        <div class="stat"><span class="num">🔥 ${streak}</span><span class="label">Streak</span></div>
+        <div class="stat"><span class="num">${remaining>0?remaining:'🏆'}</span><span class="label">${remaining>0?'To Prize':'Earned!'}</span></div>
+        <div class="stat"><span class="num">${mins}</span><span class="label">Minutes</span></div></div></div>
+    <div class="section-title">📅 April Challenge</div><div class="card"><div class="streak-bar">${cal}</div></div>
+    ${total>=PRIZE_TARGET?'<div class="prize-banner"><span class="big">🏆🎉</span>PRIZE EARNED! Amazing work!</div>':''}
+    <div class="section-title">📋 Practice History</div>
+    ${hist||'<p style="font-size:.8em;color:var(--blue)">No sessions logged yet ⚽</p>'}
+    ${isMe?'<button class="btn-secondary" onclick="switchPlayer()">🔄 Switch Player</button>':''}
+    ${isCoach?`<button class="btn-primary" style="margin-top:10px" onclick="adminAddEntry('${name}')">➕ Add Practice Entry</button>`:''}`;
+}
+
+// Admin
+function renderAdmin(){
+  const pins=getPins();
+  let rows=PLAYERS.map((p,i)=>{const hasPin=!!pins[p],total=getTotalDays(p);
+    return `<div class="admin-player-row"><span class="name">${getEmoji(p)} ${p} <span style="font-size:.75em;color:var(--blue)">(${total} days${hasPin?' • PIN set':''})</span></span>
+      ${hasPin?`<button onclick="adminResetPin('${p}')">🔑 Reset</button>`:''}</div>`;}).join('');
+  document.getElementById('adminContent').innerHTML=`
+    <div class="section-title">⚙️ Admin Panel</div>
+    <div class="admin-card"><h4>🔑 Player PINs</h4>${rows}</div>
+    <div class="admin-card"><h4>📊 Quick Stats</h4><p style="font-size:.8em;color:var(--light)">
+      Players with PINs: ${PLAYERS.filter(p=>pins[p]).length}/${PLAYERS.length}<br>
+      Players who've logged: ${PLAYERS.filter(p=>getTotalDays(p)>0).length}/${PLAYERS.length}<br>
+      Total entries: ${PLAYERS.reduce((s,p)=>s+getTotalDays(p),0)}<br>
+      Total minutes: ${PLAYERS.reduce((s,p)=>s+getTotalMinutes(p),0)}</p></div>
+    <button class="btn-secondary" onclick="switchPlayer()">🔄 Switch to Player View</button>
+    <button class="btn-danger" onclick="adminExportData()">📤 Export All Data</button>`;
+}
+function adminResetPin(name){showModal('🔑 Reset PIN',`<p>Reset PIN for <strong>${name}</strong>?</p>`,()=>{
+  const pins=getPins();delete pins[name];savePins(pins);showToast(`✅ PIN reset for ${name}`);renderAdmin();},'Reset PIN')}
+function adminDeleteEntry(name,date){showModal('🗑️ Delete Entry',`<p>Delete log for <strong>${name}</strong> on <strong>${fmtDate(date)}</strong>?</p>`,()=>{
+  const data=getData();if(data[name])delete data[name][date];saveData(data);showToast('✅ Entry deleted');showProfile(name);},'Delete')}
+function adminEditEntry(name,date){
+  const data=getData(),entry=data[name]?.[date];if(!entry)return;
+  const curDrills=entry.drillIds||[entry.drillId]||[];
+  const drillChecks=DRILLS.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:.8em;color:var(--light);margin:4px 0"><input type="checkbox" value="${d.id}" ${curDrills.includes(d.id)?'checked':''}>${d.emoji} ${d.name}</label>`).join('');
+  showModal('✏️ Edit Entry',`<p>${name} — ${fmtDate(date)}</p>${drillChecks}
+    <input type="number" id="editDuration" value="${entry.duration||15}" min="5" max="120" style="margin-top:8px" placeholder="Minutes">
+    <textarea id="editNote" style="margin-top:4px">${entry.note||''}</textarea>`,()=>{
+    const checked=[...document.querySelectorAll('.modal input[type=checkbox]:checked')].map(c=>c.value);
+    const names=checked.map(id=>DRILLS.find(d=>d.id===id).name);
+    data[name][date]={...entry,drills:names,drillIds:checked,duration:parseInt(document.getElementById('editDuration').value)||15,note:document.getElementById('editNote').value.trim()};
+    saveData(data);showToast('✅ Entry updated');showProfile(name);},'Save')}
+function adminAddEntry(name){
+  let dateOpts='';const d=new Date(START),t=today();
+  for(let i=0;i<TOTAL_DAYS;i++){const s=ds(d);if(s<=t){const ex=getData()[name]?.[s];dateOpts+=`<option value="${s}" ${s===t?'selected':''}>${fmtDate(s)}${ex?' ✅':''}</option>`}d.setDate(d.getDate()+1)}
+  const drillChecks=DRILLS.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:.8em;color:var(--light);margin:4px 0"><input type="checkbox" value="${d.id}">${d.emoji} ${d.name}</label>`).join('');
+  showModal('➕ Add Entry',`<p>Add practice for <strong>${name}</strong></p><select id="addDate">${dateOpts}</select>${drillChecks}
+    <input type="number" id="addDuration" value="15" min="5" max="120" style="margin-top:8px" placeholder="Minutes">
+    <textarea id="addNote" placeholder="Optional note..." style="margin-top:4px"></textarea>`,()=>{
+    const data=getData();if(!data[name])data[name]={};
+    const checked=[...document.querySelectorAll('.modal input[type=checkbox]:checked')].map(c=>c.value);
+    const names=checked.map(id=>DRILLS.find(d=>d.id===id).name);
+    data[name][document.getElementById('addDate').value]={drills:names,drillIds:checked,
+      duration:parseInt(document.getElementById('addDuration').value)||15,note:document.getElementById('addNote').value.trim(),time:'Coach'};
+    saveData(data);showToast(`✅ Added for ${name}`);showProfile(name);},'Add')}
+function adminExportData(){
+  const exp=JSON.stringify({practiceData:getData(),pins:getPins(),emojis:getEmojis()},null,2);
+  const blob=new Blob([exp],{type:'application/json'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='olm-blues-data.json';a.click();showToast('📤 Data exported!')}
+
+// Init
+updateCountdown();setInterval(updateCountdown,6e4);
+document.getElementById('syncStatus').innerHTML=useFirebase
+  ?'<span style="color:var(--green)">🟢 Live — synced across all devices</span>'
+  :'<span style="color:var(--gold)">📱 Local only</span>';
+const saved=getSavedUser();
+if(saved){if(saved===COACH.name&&getPins()[COACH.name])showPinEnter(-1,'coach');
+  else if(PLAYERS.includes(saved)){const idx=PLAYERS.indexOf(saved);if(getPins()[saved])showPinEnter(idx,'player');else loginAs(idx,'player')}
+  else showSetup();
+}else showSetup();
+
+</script>
+</body>
+</html>
