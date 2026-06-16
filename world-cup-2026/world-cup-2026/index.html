@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0e1a">
+<title>OLM World Cup Challenge ⚽🏆</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--pitch:#0a0e1a;--pitch-light:#141b2d;--green:#1b5e20;--green-bright:#4caf50;--gold:#ffd700;--gold-dark:#b8860b;--white:#fff;--light:#b0bec5;--red:#d32f2f;--blue:#1565c0;--orange:#f57c00;--cream:#f5f5dc}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--pitch);color:var(--white);min-height:100vh;padding-bottom:80px;overflow-x:hidden;background-image:radial-gradient(ellipse at 50% 0%,rgba(21,101,192,.15) 0%,transparent 70%)}
+/* Header - stadium feel */
+.header{text-align:center;padding:18px 10px 12px;background:linear-gradient(180deg,#1a0a2e 0%,#0d1847 50%,#0a0e1a 100%);border-bottom:3px solid var(--gold);position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L35 20H50L38 28L42 43L30 35L18 43L22 28L10 20H25Z' fill='rgba(255,215,0,0.03)'/%3E%3C/svg%3E");opacity:.5}
+.header *{position:relative;z-index:1}
+.header h1{font-size:1.2em;margin:4px 0 2px;color:var(--gold);text-shadow:0 2px 4px rgba(0,0,0,.5);letter-spacing:.5px}
+.header p{font-size:.75em;color:rgba(255,255,255,.8)}
+.header .welcome{font-size:.9em;color:var(--gold);margin-top:6px;font-weight:700}
+.wc-logo{font-size:2.2em;display:block;margin-bottom:2px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.countdown{background:linear-gradient(135deg,#1a237e,#283593);color:var(--white);text-align:center;padding:12px;font-weight:700;font-size:.9em;border-radius:10px;margin:10px 15px;border:1px solid rgba(255,215,0,.3);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.countdown span{font-size:1.3em;display:block;color:var(--gold)}
+/* Tabs - tournament style */
+.tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,#0d1847,#0a0e1a);border-top:2px solid var(--gold);z-index:100}
+.tab{flex:1;text-align:center;padding:8px 4px;font-size:.65em;color:rgba(255,255,255,.6);cursor:pointer;transition:.2s}
+.tab.active{color:var(--gold);background:rgba(255,215,0,.08)}
+.tab div{font-size:1.8em;margin-bottom:2px}
+.page{display:none;padding:10px 15px 20px}.page.active{display:block}
+.card{background:rgba(21,101,192,.08);border:1px solid rgba(21,101,192,.2);border-radius:12px;padding:12px;margin-bottom:10px}
+.btn-primary{width:100%;padding:14px;border:none;border-radius:10px;font-size:1em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#c41e3a,#8b0000);color:var(--white);border:2px solid var(--gold);text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.btn-primary:active{transform:scale(.97)}.btn-primary:disabled{opacity:.4}
+.btn-secondary{width:100%;padding:10px;border:1px solid rgba(255,215,0,.4);border-radius:10px;font-size:.85em;cursor:pointer;background:transparent;color:var(--gold);margin-top:8px}
+.btn-danger{width:100%;padding:10px;border:1px solid var(--red);border-radius:10px;font-size:.85em;cursor:pointer;background:transparent;color:var(--red);margin-top:8px}
+textarea,select,input[type=number],input[type=text],input[type=url]{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(21,101,192,.3);border-radius:8px;padding:10px;color:var(--white);font-size:.85em;margin-bottom:8px}
+textarea{height:50px;resize:none}
+select option{background:var(--pitch);color:var(--white)}
+.section-title{color:var(--gold);font-size:.85em;font-weight:700;margin:15px 0 8px;text-transform:uppercase;letter-spacing:1px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1a237e,#283593);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700;font-size:.9em;z-index:200;display:none;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.4);min-width:250px;border:1px solid var(--gold)}
+.toast.error{background:var(--pitch);border:2px solid var(--red)}
+/* Setup screens */
+.setup-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:20px;text-align:center}
+.setup-screen h2{color:var(--gold);margin:15px 0 5px;font-size:1.2em}
+.setup-screen p{color:var(--light);font-size:.8em;margin-bottom:15px}
+.player-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:350px}
+.player-grid .player-btn{background:rgba(21,101,192,.1);border:1px solid rgba(21,101,192,.3);border-radius:10px;padding:12px 6px;color:var(--white);font-size:.75em;cursor:pointer;text-align:center;transition:.2s}
+.player-grid .player-btn:active{transform:scale(.95)}
+.player-grid .player-btn .emoji{font-size:1.6em;display:block;margin-bottom:4px}
+.player-grid .player-btn.coach{background:rgba(255,215,0,.08);border-color:var(--gold)}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin:15px 0}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(21,101,192,.5);background:transparent;transition:.2s}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:0 auto}
+.pin-key{background:rgba(21,101,192,.15);border:1px solid rgba(21,101,192,.3);border-radius:10px;padding:14px;font-size:1.3em;color:var(--white);cursor:pointer;text-align:center;font-weight:700;transition:.2s}
+.pin-key:active{background:var(--gold);color:var(--pitch)}
+/* Leaderboard */
+.leaderboard-item{display:flex;align-items:center;padding:10px;margin-bottom:6px;background:rgba(21,101,192,.08);border-radius:10px;border:1px solid rgba(21,101,192,.15);cursor:pointer;transition:.2s}
+.leaderboard-item:active{transform:scale(.98)}
+.leaderboard-item.top3{border-color:var(--gold);background:rgba(255,215,0,.06)}
+.leaderboard-item.first{border-color:var(--gold);background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.02));border-width:2px}
+.lb-rank{font-size:1.3em;width:35px;text-align:center;font-weight:700}.lb-rank.gold{color:var(--gold)}
+.lb-info{flex:1;margin-left:8px}.lb-name{font-weight:700;font-size:.85em}
+.lb-name .flag{margin-left:6px;font-size:1.1em}
+.lb-stats{font-size:.7em;color:var(--light);margin-top:2px}
+.lb-points{text-align:right;font-size:.75em}.lb-points .num{font-size:1.4em;font-weight:700;color:var(--gold);display:block}
+/* Drill select */
+.drill-select{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px}
+.drill-btn{background:rgba(21,101,192,.1);border:1px solid rgba(21,101,192,.2);border-radius:8px;padding:10px 6px;color:var(--white);font-size:.75em;cursor:pointer;text-align:center;transition:.2s}
+.drill-btn.selected{background:var(--red);color:var(--white);font-weight:700;border-color:var(--gold);box-shadow:0 0 8px rgba(255,215,0,.3)}
+.drill-btn .emoji{font-size:1.3em;display:block;margin-bottom:3px}
+/* Duration */
+.duration-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.duration-row label{color:var(--light);font-size:.8em;white-space:nowrap}
+.duration-row input{width:80px;text-align:center}
+.duration-row span{color:var(--light);font-size:.8em}
+/* Date picker */
+.date-select{display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:center}
+.date-select button{background:rgba(21,101,192,.15);border:1px solid rgba(21,101,192,.3);border-radius:8px;padding:8px 12px;color:var(--white);cursor:pointer;font-size:1em}
+.date-select .date-label{color:var(--gold);font-weight:700;font-size:.9em;min-width:120px;text-align:center}
+.date-select .today-tag{font-size:.65em;color:var(--green-bright);display:block}
+/* Profile */
+.profile-header{text-align:center;padding:15px 0}
+.profile-header .big-emoji{font-size:3.5em}
+.profile-header h2{color:var(--gold);margin:4px 0}
+.profile-header .stats{display:flex;justify-content:center;gap:15px;margin-top:10px;flex-wrap:wrap}
+.stat{text-align:center;background:rgba(21,101,192,.1);border-radius:8px;padding:8px 12px;border:1px solid rgba(21,101,192,.2)}
+.stat .num{font-size:1.5em;font-weight:700;color:var(--gold);display:block}
+.stat .label{font-size:.65em;color:var(--light)}
+/* Calendar */
+.streak-bar{display:flex;gap:3px;flex-wrap:wrap}
+.streak-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.5em;border:1px solid rgba(21,101,192,.3)}
+.streak-dot.done{background:var(--green-bright);border-color:var(--green-bright);color:#fff}
+.streak-dot.today{border-color:var(--gold);border-width:2px}
+.streak-dot.future{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:rgba(255,255,255,.15)}
+/* WC team picker */
+.wc-team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:50vh;overflow-y:auto;padding:4px}
+.wc-team-btn{background:rgba(21,101,192,.1);border:1px solid rgba(21,101,192,.2);border-radius:8px;padding:8px 4px;color:var(--white);font-size:.7em;cursor:pointer;text-align:center;transition:.2s}
+.wc-team-btn.selected{background:linear-gradient(135deg,#1a237e,#283593);color:var(--white);font-weight:700;border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,.4)}
+.wc-team-btn .flag{font-size:1.6em;display:block;margin-bottom:2px}
+/* Notifications */
+.notif-bar{background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:10px;margin:10px 15px;font-size:.8em}
+.notif-bar .notif-item{padding:4px 0;border-bottom:1px solid rgba(255,215,0,.1)}
+.notif-bar .notif-item:last-child{border:none}
+/* Challenge cards */
+.challenge-card{background:rgba(21,101,192,.08);border:1px solid rgba(21,101,192,.2);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.challenge-card::before{content:'⚽';position:absolute;top:-5px;right:-5px;font-size:3em;opacity:.06}
+.challenge-card h4{color:var(--gold);font-size:.9em;margin-bottom:6px}
+.challenge-card p{font-size:.75em;color:var(--light);line-height:1.4;margin-bottom:8px}
+.challenge-card .deadline{font-size:.7em;color:var(--orange)}
+.challenge-card .completed{color:var(--green-bright);font-weight:700;font-size:.8em}
+/* Admin */
+.admin-card{background:rgba(21,101,192,.08);border:1px solid rgba(21,101,192,.2);border-radius:12px;padding:12px;margin-bottom:10px}
+.admin-card h4{color:var(--gold);font-size:.85em;margin-bottom:8px}
+.admin-row{display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(21,101,192,.1);font-size:.8em}
+.admin-row:last-child{border:none}
+.admin-row button{background:rgba(21,101,192,.15);border:1px solid rgba(21,101,192,.3);border-radius:6px;padding:4px 10px;color:var(--white);cursor:pointer;font-size:.8em;margin-left:4px}
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:linear-gradient(180deg,#0a0e1a,#141b2d);border:1px solid var(--gold);border-radius:12px;padding:20px;max-width:360px;width:100%;max-height:85vh;overflow-y:auto}
+.modal h3{color:var(--gold);margin-bottom:10px;font-size:1em;text-align:center}
+.modal p{color:var(--light);font-size:.8em;margin-bottom:12px}
+.modal-actions{display:flex;gap:8px;margin-top:12px}
+.modal-actions button{flex:1;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;font-size:.85em}
+.modal-actions .confirm{background:linear-gradient(135deg,#c41e3a,#8b0000);color:var(--white);border:1px solid var(--gold)}
+.modal-actions .cancel{background:transparent;color:var(--light);border:1px solid rgba(255,255,255,.3)}
+/* No emoji picker needed - replaced by flag */
+.emoji-picker{display:none}
+/* History */
+.history-item{display:flex;align-items:center;padding:8px;margin-bottom:4px;background:rgba(21,101,192,.05);border-radius:8px;font-size:.75em}
+.history-item .date{color:var(--gold);min-width:45px;font-weight:700}
+.history-item .detail{flex:1;margin-left:8px;color:var(--light)}
+/* Prize */
+.prize-banner{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--pitch);text-align:center;padding:14px;border-radius:10px;margin:10px 0;font-weight:700;box-shadow:0 4px 15px rgba(255,215,0,.3)}
+.prize-banner .big{font-size:1.5em;display:block}
+/* Confetti */
+@keyframes confetti{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes celebrateIn{0%{transform:scale(0);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.confetti-piece{position:fixed;top:-10px;z-index:250;animation:confetti 2s ease-in forwards;pointer-events:none}
+.celebrate{animation:celebrateIn .5s ease-out}
+/* WC Progress display */
+.wc-progress{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.wc-round{background:rgba(21,101,192,.15);border-radius:6px;padding:4px 8px;font-size:.7em;color:var(--light);border:1px solid rgba(21,101,192,.2)}
+.wc-round.achieved{background:var(--gold);color:var(--pitch);border-color:var(--gold);font-weight:700}
+/* Subtle stadium glow effect */
+body::before{content:'';position:fixed;top:50%;left:50%;width:200px;height:200px;border:1px solid rgba(21,101,192,.04);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+body::after{content:'';position:fixed;top:0;left:0;right:0;height:200px;background:radial-gradient(ellipse at 50% 0%,rgba(255,215,0,.02) 0%,transparent 70%);pointer-events:none}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="wc-logo">🏆⚽🌍</span>
+  <h1>FIFA WORLD CUP 2026</h1>
+  <p>OLM Training Challenge • USA 🇺🇸 Mexico 🇲🇽 Canada 🇨🇦</p>
+  <div class="welcome" id="welcomeMsg"></div>
+</div>
+<div class="countdown" id="countdown"></div>
+<div id="notifications"></div>
+<div class="toast" id="toast"></div>
+<div id="modalContainer"></div>
+
+<!-- Home Page -->
+<div class="page" id="page-home">
+  <div id="homeContent"></div>
+</div>
+
+<!-- Team Selection -->
+<div class="page" id="page-team-select"><div class="setup-screen">
+  <h2>🏆 Select Your Team</h2><p>Which OLM team are you in?</p>
+  <div class="player-grid" id="teamSelectGrid" style="max-width:400px"></div>
+  <div id="superAdminLink" style="margin-top:15px"></div>
+</div></div>
+
+<!-- Setup: Select Player -->
+<div class="page" id="page-setup"><div class="setup-screen">
+  <h2>🏆 Select Your Player</h2><p>Who's training today?</p>
+  <div class="player-grid" id="setupPlayerGrid"></div>
+</div></div>
+
+<!-- Emoji Picker - REMOVED, flag is now badge -->
+<div class="page" id="page-emoji-pick"></div>
+
+<!-- WC Team Picker -->
+<div class="page" id="page-wc-pick"><div class="setup-screen">
+  <h2>🌍 Choose Your Nation!</h2>
+  <p>This flag becomes your badge for the whole tournament!<br>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Pick Scotland for DOUBLE bonus points!</p>
+  <div class="wc-team-grid" id="wcTeamGrid"></div>
+  <button class="btn-primary" id="wcConfirmBtn" onclick="confirmWcTeam()" style="max-width:280px;margin-top:12px" disabled>🏆 This Is My Team!</button>
+</div></div>
+
+<!-- PIN Create -->
+<div class="page" id="page-pin-create"><div class="setup-screen">
+  <div style="font-size:3em" id="pinCreateEmoji"></div>
+  <h2 id="pinCreateName"></h2>
+  <p id="pinCreateMsg">Choose a 4-digit PIN so only you can log your practice</p>
+  <div class="pin-dots" id="pinCreateDots"></div>
+  <div class="pin-pad" id="pinCreatePad"></div>
+</div></div>
+
+<!-- PIN Enter -->
+<div class="page" id="page-pin-enter"><div class="setup-screen">
+  <div style="font-size:3em" id="pinEnterEmoji"></div>
+  <h2 id="pinEnterName"></h2>
+  <p id="pinEnterMsg">Enter your 4-digit PIN</p>
+  <div class="pin-dots" id="pinEnterDots"></div>
+  <div class="pin-pad" id="pinEnterPad"></div>
+  <button class="btn-secondary" onclick="showSetup()" style="max-width:200px;margin-top:15px">← Back</button>
+</div></div>
+
+<!-- Log Practice -->
+<div class="page" id="page-log">
+  <div class="section-title">📝 Log Training Session</div>
+  <div class="card">
+    <div class="date-select">
+      <button onclick="changeDate(-1)">◀</button>
+      <div><span class="date-label" id="dateLabel"></span><span class="today-tag" id="todayTag"></span></div>
+      <button onclick="changeDate(1)">▶</button>
+    </div>
+    <div class="section-title">What did you work on?</div>
+    <div class="drill-select" id="drillSelect"></div>
+    <div class="duration-row">
+      <label>Duration:</label>
+      <input type="number" id="duration" min="10" max="180" value="20" step="5">
+      <span>minutes (min 10)</span>
+    </div>
+    <textarea id="notes" placeholder="Notes (optional)"></textarea>
+    <button class="btn-primary" onclick="logPractice()">⚽ Log Training!</button>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<div class="page" id="page-leaderboard">
+  <div class="section-title" id="leaderboardTitle">🏆 Leaderboard</div>
+  <div id="leaderboardList"></div>
+  <div id="weeklySection"></div>
+  <div id="overallLeaderboardSection"></div>
+</div>
+
+<!-- Profile -->
+<div class="page" id="page-profile">
+  <div id="profileContent"></div>
+</div>
+
+<!-- Challenges (Moment + Drill of the week) -->
+<div class="page" id="page-challenges">
+  <div class="section-title">🌟 Weekly Challenges</div>
+  <div id="challengesContent"></div>
+</div>
+
+<!-- Admin -->
+<div class="page" id="page-admin">
+  <div class="section-title">⚙️ Coach Admin</div>
+  <div id="adminContent"></div>
+</div>
+
+<!-- Super Admin (Global) -->
+<div class="page" id="page-super-admin">
+  <div class="section-title">🌍 Global Admin</div>
+  <div id="superAdminContent"></div>
+</div>
+
+<!-- Bottom tabs -->
+<div class="tabs" id="mainTabs" style="display:none"></div>
+
+<script>
+// ===== CONFIG =====
+const WC_TEAMS=[
+  {name:'Czech Republic',flag:'🇨🇿',group:'A'},{name:'Mexico',flag:'🇲🇽',group:'A'},{name:'South Africa',flag:'🇿🇦',group:'A'},{name:'South Korea',flag:'🇰🇷',group:'A'},
+  {name:'Bosnia & Herzegovina',flag:'🇧🇦',group:'B'},{name:'Canada',flag:'🇨🇦',group:'B'},{name:'Qatar',flag:'🇶🇦',group:'B'},{name:'Switzerland',flag:'🇨🇭',group:'B'},
+  {name:'Brazil',flag:'🇧🇷',group:'C'},{name:'Haiti',flag:'🇭🇹',group:'C'},{name:'Morocco',flag:'🇲🇦',group:'C'},{name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',group:'C'},
+  {name:'Australia',flag:'🇦🇺',group:'D'},{name:'Paraguay',flag:'🇵🇾',group:'D'},{name:'Turkey',flag:'🇹🇷',group:'D'},{name:'United States',flag:'🇺🇸',group:'D'},
+  {name:'Curaçao',flag:'🇨🇼',group:'E'},{name:'Ecuador',flag:'🇪🇨',group:'E'},{name:'Germany',flag:'🇩🇪',group:'E'},{name:'Ivory Coast',flag:'🇨🇮',group:'E'},
+  {name:'Japan',flag:'🇯🇵',group:'F'},{name:'Netherlands',flag:'🇳🇱',group:'F'},{name:'Sweden',flag:'🇸🇪',group:'F'},{name:'Tunisia',flag:'🇹🇳',group:'F'},
+  {name:'Belgium',flag:'🇧🇪',group:'G'},{name:'Egypt',flag:'🇪🇬',group:'G'},{name:'Iran',flag:'🇮🇷',group:'G'},{name:'New Zealand',flag:'🇳🇿',group:'G'},
+  {name:'Cape Verde',flag:'🇨🇻',group:'H'},{name:'Saudi Arabia',flag:'🇸🇦',group:'H'},{name:'Spain',flag:'🇪🇸',group:'H'},{name:'Uruguay',flag:'🇺🇾',group:'H'},
+  {name:'France',flag:'🇫🇷',group:'I'},{name:'Iraq',flag:'🇮🇶',group:'I'},{name:'Norway',flag:'🇳🇴',group:'I'},{name:'Senegal',flag:'🇸🇳',group:'I'},
+  {name:'Algeria',flag:'🇩🇿',group:'J'},{name:'Argentina',flag:'🇦🇷',group:'J'},{name:'Austria',flag:'🇦🇹',group:'J'},{name:'Jordan',flag:'🇯🇴',group:'J'},
+  {name:'Colombia',flag:'🇨🇴',group:'K'},{name:'DR Congo',flag:'🇨🇩',group:'K'},{name:'Portugal',flag:'🇵🇹',group:'K'},{name:'Uzbekistan',flag:'🇺🇿',group:'K'},
+  {name:'Croatia',flag:'🇭🇷',group:'L'},{name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',group:'L'},{name:'Ghana',flag:'🇬🇭',group:'L'},{name:'Panama',flag:'🇵🇦',group:'L'}
+];
+const WC_ROUNDS=['round32','round16','quarters','semis','final','winner'];
+const WC_ROUND_LABELS={round32:'Last 32',round16:'Last 16',quarters:'Quarter Finals',semis:'Semi Finals',final:'Final',winner:'Winner'};
+const WC_ROUND_POINTS={round32:1,round16:1,quarters:1,semis:1,final:1,winner:1};
+
+const PLAYERS=['Sophie','Sylvie','Annie','Eva','Chloe','Esme','Marnie','Hannah','Aminah','Orla','Layla','Rebecca','Collette'];
+const EMOJI_OPTIONS=['⚽','🌟','💫','🔥','✨','💪','🎯','⭐','🌈','💎','🦋','🍀','👑','🦄','🐝','🌸','🎀','⚡','🌙','🐬','🎵','🍩','🐾','🌺'];
+const DEFAULT_EMOJIS=['⚡','🌟','💫','🔥','✨','💪','🎯','⭐','🌈','💎','🦋','🍀','👑'];
+const DRILLS=[
+  {id:'dribbling',emoji:'⚽',name:'Dribbling'},{id:'shooting',emoji:'🎯',name:'Shooting'},
+  {id:'passing',emoji:'🤝',name:'Passing'},{id:'fitness',emoji:'🏃',name:'Fitness'},
+  {id:'skills',emoji:'🧠',name:'Ball Mastery'},{id:'first-touch',emoji:'🦶',name:'First Touch'},
+  {id:'ball-striking',emoji:'💥',name:'Ball Striking'},{id:'receiving',emoji:'🎯',name:'Receiving'},
+  {id:'goalkeeping',emoji:'🧤',name:'Goalkeeping'},{id:'other',emoji:'⚽',name:'Other'}
+];
+const START=new Date('2026-06-15'),END=new Date('2026-08-17'),TOTAL_DAYS=64,PRIZE_TARGET=39;
+
+// Firebase
+const FIREBASE_CONFIG={apiKey:"AIzaSyA8q-8VI7hAL152d1ZdJhGCacmDa-UO4wI",authDomain:"olm-wc-challenge.firebaseapp.com",databaseURL:"https://olm-wc-challenge-default-rtdb.europe-west1.firebasedatabase.app",projectId:"olm-wc-challenge"};
+let db=null,useFirebase=false;
+try{if(typeof firebase!=='undefined'){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();useFirebase=true}}catch(e){}
+
+// ===== STATE =====
+let currentUser=null,isCoach=false,isSuperAdmin=false,currentTeamId=null,selectedDrills=[],logDate=null,pendingPlayerIdx=-1,pickedEmoji=null,pickedWcTeam=null;
+
+// Default team (migrates existing single-team setup)
+const DEFAULT_TEAM_ID='olm-u12s-blues';
+const DEFAULT_REGISTRY={teams:{}};
+DEFAULT_REGISTRY.teams[DEFAULT_TEAM_ID]={name:'OLM Blues',players:['Sophie','Sylvie','Annie','Eva','Chloe','Esme','Marnie','Hannah','Aminah','Orla','Layla','Rebecca','Collette'],leadCoach:'Coach',coaches:[]};
+
+// ===== DATA LAYER (Multi-team) =====
+// Global data (shared across all teams)
+let _global={registry:null,wcProgress:{}};
+// Per-team data (scoped to currentTeamId)
+let _team={data:{},pins:{},wcTeams:{},moments:{},drillsWeek:{}};
+let _fbListeners=[];
+
+function _load(key){try{return JSON.parse(localStorage.getItem(key))||{}}catch(e){return{}}}
+
+// Global getters/setters
+function getRegistry(){return _global.registry||DEFAULT_REGISTRY}
+function saveRegistry(d){_global.registry=d;localStorage.setItem('olm-wc-registry',JSON.stringify(d));if(useFirebase)db.ref('wc/registry').set(d)}
+function getWcProgress(){return _global.wcProgress}
+function saveWcProgress(d){_global.wcProgress=d;localStorage.setItem('olm-wc-progress',JSON.stringify(d));if(useFirebase)db.ref('wc/wcProgress').set(d)}
+function getAllTeams(){return getRegistry().teams||{}}
+function getTeamInfo(teamId){return getAllTeams()[teamId||currentTeamId]||{}}
+function getTeamPlayers(){return getTeamInfo().players||[]}
+
+// Per-team getters/setters
+function _teamPath(p){return 'wc/teams/'+currentTeamId+'/'+p}
+function _teamSave(cacheKey,fbSuffix,d){_team[cacheKey]=d;localStorage.setItem('olm-wc-'+currentTeamId+'-'+cacheKey,JSON.stringify(d));if(useFirebase)db.ref(_teamPath(fbSuffix)).set(d)}
+function getData(){return _team.data}
+function saveData(d){_teamSave('data','data',d)}
+function getPins(){return _team.pins}
+function savePins(d){_teamSave('pins','pins',d)}
+function getWcTeams(){return _team.wcTeams}
+function saveWcTeams(d){_teamSave('wcTeams','wcTeams',d)}
+function getMoments(){return _team.moments}
+function saveMoments(d){_teamSave('moments','moments',d)}
+function getDrillsWeek(){return _team.drillsWeek}
+function saveDrillsWeek(d){_teamSave('drillsWeek','drillsWeek',d)}
+
+// Load team data from localStorage
+function _loadTeamData(teamId){
+  const tid=teamId||currentTeamId;if(!tid)return;
+  _team.data=_load('olm-wc-'+tid+'-data');
+  _team.pins=_load('olm-wc-'+tid+'-pins');
+  _team.wcTeams=_load('olm-wc-'+tid+'-wcTeams');
+  _team.moments=_load('olm-wc-'+tid+'-moments');
+  _team.drillsWeek=_load('olm-wc-'+tid+'-drillsWeek');
+}
+
+// Load global data
+function _loadGlobal(){
+  _global.registry=_load('olm-wc-registry')||null;
+  _global.wcProgress=_load('olm-wc-progress');
+}
+_loadGlobal();
+
+// Firebase listeners
+function _detachListeners(){_fbListeners.forEach(fn=>fn());_fbListeners=[]}
+function _initFirebase(){
+  if(!useFirebase)return;
+  // Global listeners
+  const regRef=db.ref('wc/registry');regRef.on('value',snap=>{_global.registry=snap.val()||DEFAULT_REGISTRY;localStorage.setItem('olm-wc-registry',JSON.stringify(_global.registry));if(currentUser)refreshCurrentView()});
+  _fbListeners.push(()=>regRef.off());
+  const progRef=db.ref('wc/wcProgress');progRef.on('value',snap=>{_global.wcProgress=snap.val()||{};localStorage.setItem('olm-wc-progress',JSON.stringify(_global.wcProgress));if(currentUser)refreshCurrentView()});
+  _fbListeners.push(()=>progRef.off());
+  const saRef=db.ref('wc/superAdminPin');saRef.on('value',snap=>{const d=snap.val()||{};localStorage.setItem('olm-wc-superadmin-pin',JSON.stringify(d))});
+  _fbListeners.push(()=>saRef.off());
+}
+function _initTeamFirebase(teamId){
+  // Detach old team listeners
+  _fbListeners.filter(f=>f._team).forEach(f=>{f();});
+  _fbListeners=_fbListeners.filter(f=>!f._team);
+  if(!useFirebase||!teamId)return;
+  const fields=['data','pins','wcTeams','moments','drillsWeek'];
+  fields.forEach(f=>{
+    const ref=db.ref('wc/teams/'+teamId+'/'+f);
+    ref.on('value',snap=>{_team[f]=snap.val()||{};localStorage.setItem('olm-wc-'+teamId+'-'+f,JSON.stringify(_team[f]));if(currentUser)refreshCurrentView()});
+    const detach=()=>ref.off();detach._team=true;_fbListeners.push(detach);
+  });
+}
+_initFirebase();
+
+// Switch active team
+function setActiveTeam(teamId){
+  currentTeamId=teamId;localStorage.setItem('olm-wc-activeTeam',teamId);
+  _loadTeamData(teamId);_initTeamFirebase(teamId);
+}
+
+function getEmoji(name){const t=getWcTeams()[name];if(t){const wc=WC_TEAMS.find(w=>w.name===t);if(wc)return wc.flag}return'⚽'}
+function getFlag(name){return getEmoji(name)}
+
+// ===== UTILITY =====
+function ds(d){return d.toISOString().split('T')[0]}
+function today(){return ds(new Date())}
+function fmtDate(s){return new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+function showToast(m,err,dur){const t=document.getElementById('toast');t.innerHTML=m;t.className='toast celebrate'+(err?' error':'');t.style.display='block';setTimeout(()=>{t.style.display='none'},dur||3500)}
+function hideAllPages(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))}
+function showModal(title,body,onConfirm,confirmText='Confirm'){
+  document.getElementById('modalContainer').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>${title}</h3>${body}<div class="modal-actions"><button class="cancel" onclick="closeModal()">Cancel</button><button class="confirm" id="modalConfirm">${confirmText}</button></div></div></div>`;
+  document.getElementById('modalConfirm').onclick=()=>{onConfirm();closeModal()};
+}
+function closeModal(){document.getElementById('modalContainer').innerHTML=''}
+
+// ===== POINTS SYSTEM =====
+function getTrainingPoints(name){
+  const data=getData()[name]||{};const sd=ds(START),ed=ds(END);
+  return Object.keys(data).filter(d=>d>=sd&&d<=ed).length;
+}
+function getMomentPoints(name){
+  const moments=getMoments();let pts=0;
+  Object.values(moments).forEach(m=>{if(m.completions&&m.completions[name])pts++});
+  return pts;
+}
+function getDrillPoints(name){
+  const drills=getDrillsWeek();let pts=0;
+  Object.values(drills).forEach(d=>{if(d.completions&&d.completions[name])pts++});
+  return pts;
+}
+function getWcProgressPoints(name){
+  const team=getWcTeams()[name];if(!team)return 0;
+  const progress=getWcProgress();let pts=0;
+  const isScotland=team==='Scotland';
+  WC_ROUNDS.forEach(r=>{if(progress[r]&&progress[r].includes(team))pts++});
+  return isScotland?pts*2:pts;
+}
+function getTotalPoints(name){
+  return getTrainingPoints(name)+getMomentPoints(name)+getDrillPoints(name)+getWcProgressPoints(name);
+}
+function getTotalMinutes(name){
+  const data=getData()[name]||{};const sd=ds(START),ed=ds(END);
+  return Object.entries(data).filter(([d])=>d>=sd&&d<=ed).reduce((s,[,e])=>s+(e.duration||0),0);
+}
+function getStreak(name){
+  const data=getData()[name]||{};const days=Object.keys(data).sort();
+  if(!days.length)return 0;
+  let s=0,c=new Date(today()+'T12:00:00');const startDate=ds(START);
+  for(let i=0;i<TOTAL_DAYS;i++){const cd=ds(c);if(cd<startDate)break;if(days.includes(cd))s++;else if(cd<=today())break;c.setDate(c.getDate()-1)}
+  return s;
+}
+
+// ===== ANIMATIONS =====
+function fireConfetti(type){
+  const themes={
+    default:{count:30,chars:['⚽','🌟','💫','🔥','✨','⭐']},
+    wc:{count:35,chars:['🏆','⚽','🌍','🥇','🎉','⭐','🏴󠁧󠁢󠁳󠁣󠁴󠁿']},
+    prize:{count:40,chars:['🏆','🏆','🥇','👑','🎉','⭐','💫','🌟']}
+  };
+  const t=themes[type]||themes.default;
+  for(let i=0;i<t.count;i++){const el=document.createElement('div');el.className='confetti-piece';
+    el.style.left=Math.random()*100+'vw';el.style.animationDelay=Math.random()*0.5+'s';
+    el.style.animationDuration=(1.5+Math.random())+'s';el.style.fontSize=(1+Math.random()*1.5)+'em';
+    el.textContent=t.chars[Math.floor(Math.random()*t.chars.length)];
+    document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
+}
+
+// ===== SETUP FLOW =====
+function showTeamSelect(){
+  const teams=getAllTeams();const teamIds=Object.keys(teams);
+  // If only one team, skip straight to player select
+  if(teamIds.length<=1){setActiveTeam(teamIds[0]||DEFAULT_TEAM_ID);showSetup();return}
+  hideAllPages();document.getElementById('page-team-select').classList.add('active');
+  document.getElementById('mainTabs').style.display='none';
+  document.getElementById('welcomeMsg').textContent='';
+  const grid=document.getElementById('teamSelectGrid');
+  grid.innerHTML=teamIds.map(id=>`<div class="player-btn" onclick="selectTeam('${id}')"><span class="emoji">⚽</span>${teams[id].name}</div>`).join('');
+  document.getElementById('superAdminLink').innerHTML=`<button class="btn-secondary" style="max-width:200px" onclick="showSuperAdminLogin()">🔧 Global Admin</button>`;
+}
+function selectTeam(teamId){setActiveTeam(teamId);showSetup()}
+function showSuperAdminLogin(){
+  // Super admin uses a PIN stored globally
+  const pins=_load('olm-wc-superadmin-pin');
+  if(!pins.pin){
+    // First time — set PIN
+    hideAllPages();document.getElementById('page-pin-create').classList.add('active');
+    document.getElementById('pinCreateEmoji').textContent='🌍';
+    document.getElementById('pinCreateName').textContent='Global Admin';
+    document.getElementById('pinCreateMsg').textContent='Set a Global Admin PIN';
+    let firstPin=null;
+    buildPinPad('pinCreatePad','pinCreateDots',pin=>{
+      if(!firstPin){firstPin=pin;document.getElementById('pinCreateMsg').textContent='Confirm your PIN';return}
+      if(pin===firstPin){
+        const p={pin:pin};localStorage.setItem('olm-wc-superadmin-pin',JSON.stringify(p));
+        if(useFirebase)db.ref('wc/superAdminPin').set(p);
+        loginAsSuperAdmin();
+      }else{firstPin=null;document.getElementById('pinCreateMsg').textContent="PINs didn't match! Try again";showToast("❌ Didn't match",true)}
+    });
+  } else {
+    hideAllPages();document.getElementById('page-pin-enter').classList.add('active');
+    document.getElementById('pinEnterEmoji').textContent='🌍';
+    document.getElementById('pinEnterName').textContent='Global Admin';
+    document.getElementById('pinEnterMsg').textContent='Enter Global Admin PIN';
+    let attempts=0;
+    buildPinPad('pinEnterPad','pinEnterDots',pin=>{
+      if(pins.pin===pin)loginAsSuperAdmin();
+      else{attempts++;if(attempts>=3){showToast('❌ Too many attempts',true);setTimeout(showTeamSelect,1500)}
+      else{showToast('❌ Wrong PIN',true);document.getElementById('pinEnterMsg').textContent=`Wrong! ${3-attempts} left`}}
+    });
+  }
+}
+function loginAsSuperAdmin(){
+  currentUser='SuperAdmin';isCoach=true;isSuperAdmin=true;
+  localStorage.setItem('olm-wc-user','SuperAdmin');localStorage.setItem('olm-wc-role','superadmin');
+  document.getElementById('welcomeMsg').innerHTML='🌍 Global Admin';
+  // Set a default team context for viewing
+  const teamIds=Object.keys(getAllTeams());
+  if(teamIds.length)setActiveTeam(teamIds[0]);
+  buildTabs();document.getElementById('mainTabs').style.display='flex';
+  showPage('super-admin');
+}
+
+function showSetup(){
+  hideAllPages();document.getElementById('page-setup').classList.add('active');
+  document.getElementById('mainTabs').style.display='none';document.getElementById('welcomeMsg').textContent='';
+  const players=getTeamPlayers();
+  const grid=document.getElementById('setupPlayerGrid');
+  grid.innerHTML=players.map((p,i)=>
+    `<div class="player-btn" onclick="pickPlayer(${i},'player')"><span class="emoji">${getEmoji(p)}</span>${p}</div>`
+  ).join('')+`<div class="player-btn coach" onclick="pickPlayer(-1,'coach')"><span class="emoji">🏆</span>Coach</div>`
+  +`<div class="player-btn" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3)" onclick="showSuperAdminLogin()"><span class="emoji">🌍</span>Admin</div>`;
+}
+
+function pickPlayer(idx,role){
+  const players=getTeamPlayers();
+  const name=role==='coach'?'Coach':players[idx];
+  const pins=getPins();
+  if(pins[name]){showPinEnter(idx,role);return}
+  if(role==='coach'){showPinCreate(idx,role);return}
+  pendingPlayerIdx=idx;showWcTeamPicker();
+}
+
+// Emoji picker removed — team flag is now the badge
+function confirmEmoji(){}
+
+// WC Team picker
+function showWcTeamPicker(){
+  hideAllPages();document.getElementById('page-wc-pick').classList.add('active');
+  pickedWcTeam=null;document.getElementById('wcConfirmBtn').disabled=true;
+  const grid=document.getElementById('wcTeamGrid');
+  grid.innerHTML=WC_TEAMS.map(t=>
+    `<div class="wc-team-btn" onclick="pickWcTeam(this,'${t.name}')"><span class="flag">${t.flag}</span>${t.name}</div>`
+  ).join('');
+}
+function pickWcTeam(el,name){
+  pickedWcTeam=name;
+  document.querySelectorAll('.wc-team-btn').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');document.getElementById('wcConfirmBtn').disabled=false;
+}
+function confirmWcTeam(){
+  if(!pickedWcTeam)return;
+  const players=getTeamPlayers();
+  const wc=getWcTeams();wc[players[pendingPlayerIdx]]=pickedWcTeam;saveWcTeams(wc);
+  showPinCreate(pendingPlayerIdx,'player');
+}
+
+// PIN
+function buildPinPad(padId,dotsId,onComplete){
+  let pin='';const dots=document.getElementById(dotsId),pad=document.getElementById(padId);
+  function rd(){dots.innerHTML=[0,1,2,3].map(i=>`<div class="pin-dot ${i<pin.length?'filled':''}"></div>`).join('')}
+  pad.innerHTML=[1,2,3,4,5,6,7,8,9,'⌫',0,''].map(v=>`<div class="pin-key" data-v="${v}">${v===''?' ':v}</div>`).join('');
+  pad.querySelectorAll('.pin-key').forEach(el=>{el.onclick=()=>{const v=el.dataset.v;
+    if(v==='⌫'){pin=pin.slice(0,-1);rd();return}if(v===''||pin.length>=4)return;
+    pin+=v;rd();if(pin.length===4)setTimeout(()=>{const p=pin;pin='';rd();onComplete(p)},200)}});rd();
+}
+function showPinCreate(idx,role){
+  const players=getTeamPlayers();
+  const name=role==='coach'?'Coach':players[idx];
+  const emoji=role==='coach'?'🏆':getEmoji(name);
+  hideAllPages();document.getElementById('page-pin-create').classList.add('active');
+  document.getElementById('pinCreateEmoji').textContent=emoji;
+  document.getElementById('pinCreateName').textContent=name;
+  document.getElementById('pinCreateMsg').textContent='Choose a 4-digit PIN';
+  let firstPin=null;
+  buildPinPad('pinCreatePad','pinCreateDots',pin=>{
+    if(!firstPin){firstPin=pin;document.getElementById('pinCreateMsg').textContent='Confirm your PIN — enter it again';return}
+    if(pin===firstPin){const pins=getPins();pins[name]=pin;savePins(pins);loginAs(idx,role)}
+    else{firstPin=null;document.getElementById('pinCreateMsg').textContent="PINs didn't match! Try again";showToast("❌ PINs didn't match",true)}
+  });
+}
+function showPinEnter(idx,role){
+  const players=getTeamPlayers();
+  const name=role==='coach'?'Coach':players[idx];
+  const emoji=role==='coach'?'🏆':getEmoji(name);
+  hideAllPages();document.getElementById('page-pin-enter').classList.add('active');
+  document.getElementById('pinEnterEmoji').textContent=emoji;
+  document.getElementById('pinEnterName').textContent=name;
+  document.getElementById('pinEnterMsg').textContent='Enter your 4-digit PIN';
+  let attempts=0;
+  buildPinPad('pinEnterPad','pinEnterDots',pin=>{
+    if(getPins()[name]===pin)loginAs(idx,role);
+    else{attempts++;if(attempts>=3){showToast('❌ Too many wrong attempts!',true);setTimeout(showSetup,1500)}
+    else{showToast('❌ Wrong PIN',true);document.getElementById('pinEnterMsg').textContent=`Wrong PIN! ${3-attempts} tries left`}}
+  });
+}
+
+function loginAs(idx,role){
+  const players=getTeamPlayers();
+  isCoach=role==='coach';isSuperAdmin=false;currentUser=isCoach?'Coach':players[idx];
+  localStorage.setItem('olm-wc-user',currentUser);
+  localStorage.setItem('olm-wc-role',role);
+  localStorage.setItem('olm-wc-activeTeam',currentTeamId);
+  const flag=isCoach?'🏆':getEmoji(currentUser);
+  const team=getWcTeams()[currentUser];
+  document.getElementById('welcomeMsg').innerHTML=isCoach?'🏆 Coach Mode':`${flag} ${currentUser}${team?' — '+team:''}`;
+  buildTabs();document.getElementById('mainTabs').style.display='flex';
+  logDate=today();selectedDrills=[];renderDrillButtons();updateDateLabel();updateCountdown();
+  showPage('home');
+  renderNotifications();
+}
+function switchPlayer(){localStorage.removeItem('olm-wc-user');localStorage.removeItem('olm-wc-role');localStorage.removeItem('olm-wc-activeTeam');currentUser=null;isCoach=false;isSuperAdmin=false;currentTeamId=null;showTeamSelect()}
+
+// Auto-login
+function tryAutoLogin(){
+  const saved=localStorage.getItem('olm-wc-user');if(!saved)return false;
+  const role=localStorage.getItem('olm-wc-role');
+  const teamId=localStorage.getItem('olm-wc-activeTeam');
+  if(role==='superadmin'){currentUser='SuperAdmin';isCoach=true;isSuperAdmin=true;if(teamId)setActiveTeam(teamId);return true}
+  if(!teamId)return false;
+  setActiveTeam(teamId);
+  if(saved==='Coach'){currentUser='Coach';isCoach=true;return true}
+  const players=getTeamPlayers();
+  const idx=players.indexOf(saved);if(idx===-1)return false;
+  currentUser=saved;isCoach=false;return true;
+}
+
+// ===== TABS & NAVIGATION =====
+function buildTabs(){
+  let tabs;
+  if(isSuperAdmin){
+    tabs=[{id:'super-admin',icon:'🌍',label:'Teams'},{id:'leaderboard',icon:'🏆',label:'Board'},{id:'home',icon:'🏠',label:'Home'}];
+  } else if(isCoach){
+    tabs=[{id:'home',icon:'🏠',label:'Home'},{id:'leaderboard',icon:'🏆',label:'Board'},{id:'challenges',icon:'🌟',label:'Challenges'},{id:'admin',icon:'⚙️',label:'Admin'}];
+  } else {
+    tabs=[{id:'home',icon:'🏠',label:'Home'},{id:'log',icon:'📝',label:'Log'},{id:'leaderboard',icon:'🏆',label:'Board'},{id:'profile',icon:'👤',label:'Me'}];
+  }
+  document.getElementById('mainTabs').innerHTML=tabs.map((t,i)=>
+    `<div class="tab${i===0?' active':''}" onclick="showPage('${t.id}')"><div>${t.icon}</div>${t.label}</div>`).join('');
+}
+function showPage(id){
+  hideAllPages();document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const tabs=document.querySelectorAll('.tab');
+  tabs.forEach(t=>{const txt=t.textContent.trim().toLowerCase();
+    if((id==='home'&&txt.includes('home'))||(id==='log'&&txt.includes('log'))||(id==='leaderboard'&&txt.includes('board'))||(id==='challenges'&&txt.includes('challenges'))||(id==='profile'&&txt.includes('me'))||(id==='admin'&&txt.includes('admin'))||(id==='super-admin'&&txt.includes('teams')))t.classList.add('active')});
+  if(id==='home')renderHome();
+  if(id==='leaderboard')renderLeaderboard();
+  if(id==='profile')showProfile(isCoach?(getTeamPlayers()[0]):currentUser);
+  if(id==='challenges')renderChallenges();
+  if(id==='admin')renderAdmin();
+  if(id==='super-admin')renderSuperAdmin();
+}
+function refreshCurrentView(){
+  const active=document.querySelector('.page.active');
+  if(!active)return;
+  const id=active.id.replace('page-','');
+  if(id==='leaderboard')renderLeaderboard();
+  if(id==='profile')showProfile(currentUser);
+  if(id==='challenges')renderChallenges();
+}
+
+// ===== COUNTDOWN =====
+function updateCountdown(){
+  const now=new Date(),end=END,diff=Math.ceil((end-now)/(1000*60*60*24));
+  const el=document.getElementById('countdown');
+  if(diff<=0)el.innerHTML='<span>🏆</span>Challenge Complete!';
+  else el.innerHTML=`<span>⚽ ${diff} days</span>until season starts — get your ${PRIZE_TARGET} points (one per World Cup day)!`;
+}
+
+// ===== LOG PRACTICE =====
+function renderDrillButtons(){
+  document.getElementById('drillSelect').innerHTML=DRILLS.map(d=>
+    `<div class="drill-btn" onclick="toggleDrill('${d.id}',this)"><span class="emoji">${d.emoji}</span>${d.name}</div>`).join('');
+}
+function toggleDrill(id,el){
+  if(selectedDrills.includes(id)){selectedDrills=selectedDrills.filter(x=>x!==id);el.classList.remove('selected')}
+  else{selectedDrills.push(id);el.classList.add('selected')}
+}
+function updateDateLabel(){
+  document.getElementById('dateLabel').textContent=fmtDate(logDate);
+  const tag=document.getElementById('todayTag');
+  tag.textContent=logDate===today()?'(Today)':logDate<today()?'(Catch-up)':'';
+}
+function changeDate(dir){
+  const d=new Date(logDate+'T12:00:00');d.setDate(d.getDate()+dir);
+  const nd=ds(d),sd=ds(START),ed=ds(END);
+  if(nd>=sd&&nd<=ed&&nd<=today()){logDate=nd;updateDateLabel()}
+}
+function logPractice(){
+  if(!selectedDrills.length)return showToast('❌ Pick at least one drill!',true);
+  const dur=parseInt(document.getElementById('duration').value)||0;
+  if(dur<10)return showToast('❌ Minimum 10 minutes!',true);
+  const data=getData();if(!data[currentUser])data[currentUser]={};
+  data[currentUser][logDate]={drills:selectedDrills.map(id=>DRILLS.find(d=>d.id===id).name),drillIds:selectedDrills,duration:dur,note:document.getElementById('notes').value,time:new Date().toTimeString().slice(0,5)};
+  saveData(data);
+  const pts=getTotalPoints(currentUser);
+  if(pts>=PRIZE_TARGET){showToast('🏆🏆🏆 YOU HIT '+PRIZE_TARGET+' POINTS! PRIZE TIME! 🏆🏆🏆');fireConfetti('prize')}
+  else{showToast('⚽ Training logged! '+pts+'/'+PRIZE_TARGET+' points');fireConfetti('default')}
+  selectedDrills=[];renderDrillButtons();document.getElementById('notes').value='';
+}
+
+// ===== HOME PAGE =====
+function renderHome(){
+  const pts=isCoach?0:getTotalPoints(currentUser);
+  const training=isCoach?0:getTrainingPoints(currentUser);
+  const team=isCoach?'':getWcTeams()[currentUser]||'';
+  const flag=isCoach?'🏆':getEmoji(currentUser);
+  const moments=getMoments(),drills=getDrillsWeek(),now=today();
+
+  let html='';
+
+  // Progress summary (players only)
+  if(!isCoach){
+    html+=`<div class="card" style="text-align:center;padding:16px">
+      <div style="font-size:2.5em">${flag}</div>
+      <div style="font-size:1.8em;font-weight:700;color:var(--gold);margin:4px 0">${pts} / ${PRIZE_TARGET}</div>
+      <div style="font-size:.8em;color:var(--light)">${pts>=PRIZE_TARGET?'🏆 PRIZE ACHIEVED!':PRIZE_TARGET-pts+' points to go!'}</div>
+      <div style="margin-top:8px;background:rgba(21,101,192,.2);border-radius:20px;height:12px;overflow:hidden">
+        <div style="height:100%;width:${Math.min(100,Math.round(pts/PRIZE_TARGET*100))}%;background:linear-gradient(90deg,var(--gold),#ffa000);border-radius:20px;transition:.3s"></div>
+      </div>
+    </div>`;
+  }
+
+  // Active Challenges
+  const activeMoments=Object.entries(moments).filter(([,m])=>m.expiryDate>=now);
+  const activeDrills=Object.entries(drills).filter(([,d])=>d.expiryDate>=now);
+  if(activeMoments.length||activeDrills.length){
+    html+='<div class="section-title">🔥 Active Challenges</div>';
+    activeMoments.forEach(([id,m])=>{
+      const done=!isCoach&&m.completions&&m.completions[currentUser];
+      html+=`<div class="challenge-card"><h4>🌟 Moment of the Week</h4><p>${m.title}</p>
+        ${m.videoUrl?`<a href="${m.videoUrl}" target="_blank" style="color:var(--gold);font-size:.8em">📺 Watch Video</a><br>`:''}
+        <div class="deadline">Expires: ${fmtDate(m.expiryDate)}</div>
+        ${done?'<div class="completed">✅ Done!</div>':'<div style="font-size:.75em;color:var(--orange);margin-top:4px">⚡ Complete for +1 bonus point</div>'}
+      </div>`;
+    });
+    activeDrills.forEach(([id,d])=>{
+      const done=!isCoach&&d.completions&&d.completions[currentUser];
+      html+=`<div class="challenge-card"><h4>🎯 Drill of the Week</h4><p>${d.title}</p>
+        ${d.videoUrl?`<a href="${d.videoUrl}" target="_blank" style="color:var(--gold);font-size:.8em">📺 Watch Video</a><br>`:''}
+        <div class="deadline">Expires: ${fmtDate(d.expiryDate)}</div>
+        ${done?'<div class="completed">✅ Done!</div>':'<div style="font-size:.75em;color:var(--orange);margin-top:4px">⚡ Complete for +1 bonus point</div>'}
+      </div>`;
+    });
+  } else {
+    html+='<div class="section-title">🌟 Challenges</div><div class="card"><p style="font-size:.8em;color:var(--light)">No active challenges right now — check back soon!</p></div>';
+  }
+
+  // WC Progress for player's team
+  if(!isCoach&&team){
+    const progress=getWcProgress();
+    const isScotland=team==='Scotland';
+    html+=`<div class="section-title">${flag} ${team}'s World Cup Journey</div><div class="card">
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${WC_ROUNDS.map(r=>{const achieved=progress[r]&&progress[r].includes(team);
+        return `<span class="wc-round${achieved?' achieved':''}">${WC_ROUND_LABELS[r]}${achieved?' ✓':''}</span>`}).join('')}
+      </div>
+      ${isScotland?'<div style="font-size:.75em;color:var(--gold);margin-top:8px">🏴󠁧󠁢󠁳󠁣󠁴󠁿 2x points on all WC progression!</div>':''}
+    </div>`;
+  }
+
+  // Rules
+  html+=`<div class="section-title">📋 Competition Rules</div>
+  <div class="card" style="font-size:.8em;color:var(--light);line-height:1.7">
+    <strong style="color:var(--gold)">🏆 How to Win</strong><br>
+    Get <strong style="color:var(--white)">${PRIZE_TARGET} points</strong> (one for every day of the World Cup!) to win a prize! Top trainer also wins a prize.<br><br>
+    <strong style="color:var(--gold)">⚽ Earning Points</strong><br>
+    • Log a training session (min 10 mins) = <strong style="color:var(--white)">1 point</strong><br>
+    • Complete the Moment of the Week = <strong style="color:var(--white)">1 bonus point</strong><br>
+    • Complete the Drill of the Week = <strong style="color:var(--white)">1 bonus point</strong><br><br>
+    <strong style="color:var(--gold)">🌍 World Cup Bonus Points</strong><br>
+    • Your team reaches Last 32 = <strong style="color:var(--white)">+1 point</strong><br>
+    • Last 16 = <strong style="color:var(--white)">+1 point</strong><br>
+    • Quarter Finals = <strong style="color:var(--white)">+1 point</strong><br>
+    • Semi Finals = <strong style="color:var(--white)">+1 point</strong><br>
+    • Final = <strong style="color:var(--white)">+1 point</strong><br>
+    • Winner = <strong style="color:var(--white)">+1 point</strong><br>
+    • 🏴󠁧󠁢󠁳󠁣󠁴󠁿 <strong style="color:var(--gold)">Pick Scotland = ALL WC points DOUBLED!</strong><br><br>
+    <strong style="color:var(--gold)">📅 Challenge Dates</strong><br>
+    ${fmtDate(ds(START))} — ${fmtDate(ds(END))} (${TOTAL_DAYS} days)
+  </div>`;
+
+  document.getElementById('homeContent').innerHTML=html;
+}
+
+// ===== TRAINER OF THE WEEK =====
+function getWeekNumber(dateStr){
+  const d=new Date(dateStr+'T12:00:00');const diff=Math.floor((d-START)/(1000*60*60*24));
+  return Math.floor(diff/7)+1;
+}
+function getWeekDates(weekNum){
+  const s=new Date(START);s.setDate(s.getDate()+(weekNum-1)*7);
+  const e=new Date(s);e.setDate(e.getDate()+6);
+  if(e>END)e.setTime(END.getTime());
+  return{start:ds(s),end:ds(e)};
+}
+function getCurrentWeek(){return getWeekNumber(today())}
+function getTotalWeeks(){return Math.ceil(TOTAL_DAYS/7)}
+function getWeeklyPoints(name,weekNum){
+  const{start,end}=getWeekDates(weekNum);
+  const data=getData()[name]||{};
+  return Object.keys(data).filter(d=>d>=start&&d<=end).length;
+}
+function getWeeklyWinner(weekNum){
+  const players=getTeamPlayers();
+  const scores=players.map(p=>({name:p,pts:getWeeklyPoints(p,weekNum)})).sort((a,b)=>b.pts-a.pts);
+  if(!scores.length||scores[0].pts===0)return null;
+  return scores[0];
+}
+
+// ===== LEADERBOARD =====
+function renderLeaderboard(){
+  const players=getTeamPlayers();
+  const sorted=players.map(name=>({name,points:getTotalPoints(name),mins:getTotalMinutes(name),streak:getStreak(name),flag:getEmoji(name),team:getWcTeams()[name]||''}))
+    .sort((a,b)=>b.points-a.points||b.mins-a.mins);
+  document.getElementById('leaderboardList').innerHTML=sorted.map((p,i)=>{
+    const cls=i===0?'first':i<3?'top3':'';
+    const rank=i<3?['🥇','🥈','🥉'][i]:(i+1);
+    const isYou=p.name===currentUser?' <span style="color:var(--green-bright);font-size:.7em">(You)</span>':'';
+    return `<div class="leaderboard-item ${cls}" onclick="showProfile('${p.name}');showPage('profile')">
+      <div class="lb-rank${i<3?' gold':''}">${rank}</div>
+      <div style="font-size:1.8em;width:35px;text-align:center">${p.flag}</div>
+      <div class="lb-info"><div class="lb-name">${p.name}${isYou}</div>
+        <div class="lb-stats">${p.team?p.team+' • ':''}${p.mins} mins • 🔥${p.streak} streak</div></div>
+      <div class="lb-points"><span class="num">${p.points}</span>/${PRIZE_TARGET}</div></div>`;
+  }).join('');
+
+  // Weekly Trainer section
+  const currentWk=getCurrentWeek();const totalWks=getTotalWeeks();
+  const players2=getTeamPlayers();
+  let wkHtml='';
+
+  // Current week leaderboard
+  const{start:wkStart,end:wkEnd}=getWeekDates(currentWk);
+  const weekScores=players2.map(p=>({name:p,pts:getWeeklyPoints(p,currentWk),flag:getEmoji(p)})).sort((a,b)=>b.pts-a.pts);
+  wkHtml+=`<div class="section-title">⭐ Trainer of the Week (Week ${currentWk})</div>`;
+  wkHtml+=`<div class="card"><div style="font-size:.75em;color:var(--light);margin-bottom:8px">${fmtDate(wkStart)} — ${fmtDate(wkEnd)}</div>`;
+  weekScores.slice(0,5).forEach((p,i)=>{
+    const rank=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    wkHtml+=`<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid rgba(21,101,192,.1);font-size:.85em">
+      <span style="width:28px;text-align:center">${rank}</span>
+      <span style="font-size:1.3em;width:28px;text-align:center">${p.flag}</span>
+      <span style="flex:1;margin-left:6px">${p.name}</span>
+      <span style="color:var(--gold);font-weight:700">${p.pts} sessions</span></div>`;
+  });
+  wkHtml+='</div>';
+
+  // Past weekly winners
+  if(currentWk>1){
+    wkHtml+='<div class="section-title">🏅 Weekly Winners</div><div class="card">';
+    for(let w=currentWk-1;w>=1;w--){
+      const winner=getWeeklyWinner(w);
+      const{start:ws,end:we}=getWeekDates(w);
+      if(winner){
+        wkHtml+=`<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid rgba(21,101,192,.1);font-size:.85em">
+          <span style="color:var(--gold);font-weight:700;width:55px">Week ${w}</span>
+          <span style="font-size:1.3em;width:28px">${getEmoji(winner.name)}</span>
+          <span style="flex:1">${winner.name}</span>
+          <span style="color:var(--light);font-size:.75em">${winner.pts} sessions</span></div>`;
+      } else {
+        wkHtml+=`<div style="padding:6px 0;font-size:.8em;color:var(--light);border-bottom:1px solid rgba(21,101,192,.1)">Week ${w} — No training logged</div>`;
+      }
+    }
+    wkHtml+='</div>';
+  }
+  document.getElementById('weeklySection').innerHTML=wkHtml;
+
+  // Show overall OLM leaderboard if multiple teams exist
+  const allTeamIds=Object.keys(getAllTeams());
+  if(allTeamIds.length>1){
+    document.getElementById('leaderboardTitle').textContent='🏆 '+getTeamInfo().name+' Leaderboard';
+    document.getElementById('overallLeaderboardSection').innerHTML='<div class="section-title">🌍 Overall OLM Leaderboard</div>'+renderOverallLeaderboard();
+  } else {
+    document.getElementById('leaderboardTitle').textContent='🏆 Leaderboard';
+    document.getElementById('overallLeaderboardSection').innerHTML='';
+  }
+}
+
+// ===== PROFILE =====
+function showProfile(name){
+  const pts=getTotalPoints(name),mins=getTotalMinutes(name),streak=getStreak(name);
+  const training=getTrainingPoints(name),momentPts=getMomentPoints(name),drillPts=getDrillPoints(name),wcPts=getWcProgressPoints(name);
+  const team=getWcTeams()[name];const flag=getFlag(name);
+  const data=getData()[name]||{};
+  const sd=ds(START),ed=ds(END);
+  // Calendar
+  let cal='<div class="streak-bar">';
+  const d=new Date(START);
+  for(let i=0;i<TOTAL_DAYS;i++){
+    const dd=ds(d);const done=data[dd]?'done':'';const isToday=dd===today()?'today':'';
+    const isFuture=dd>today()?'future':'';
+    cal+=`<div class="streak-dot ${done} ${isToday} ${isFuture}">${d.getDate()}</div>`;
+    d.setDate(d.getDate()+1);
+  }
+  cal+='</div>';
+  // History
+  const entries=Object.entries(data).filter(([d])=>d>=sd&&d<=ed).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,10);
+  const hist=entries.map(([date,e])=>`<div class="history-item"><span class="date">${fmtDate(date).split(',')[0]}</span><span class="detail">${e.drills.join(', ')} • ${e.duration}min</span></div>`).join('');
+
+  document.getElementById('profileContent').innerHTML=`
+    <div class="profile-header">
+      <div class="big-emoji">${getEmoji(name)}</div>
+      <h2>${name}${name===currentUser?' (You)':''}</h2>
+      ${team?`<div style="font-size:.9em;color:var(--light);margin-top:4px">Representing <strong style="color:var(--gold)">${team}</strong>${team==='Scotland'?' 🔥 2x WC bonus!':''}</div>`:'<div style="font-size:.8em;color:var(--orange)">No team selected yet</div>'}
+      <div class="stats">
+        <div class="stat"><span class="num">${pts}</span><span class="label">Points</span></div>
+        <div class="stat"><span class="num">${training}</span><span class="label">Sessions</span></div>
+        <div class="stat"><span class="num">${mins}</span><span class="label">Minutes</span></div>
+        <div class="stat"><span class="num">${streak}</span><span class="label">🔥 Streak</span></div>
+      </div>
+    </div>
+    <div class="card"><div class="section-title">⚽ Points Breakdown</div>
+      <div style="font-size:.8em;color:var(--light);line-height:1.8">
+        ⚽ Training Sessions: <strong style="color:var(--gold)">${training}</strong><br>
+        🌟 Moment of the Week: <strong style="color:var(--gold)">${momentPts}</strong><br>
+        🎯 Drill of the Week: <strong style="color:var(--gold)">${drillPts}</strong><br>
+        🏆 World Cup Bonus: <strong style="color:var(--gold)">${wcPts}</strong>${team==='Scotland'?' (2x!)':''}
+      </div>
+    </div>
+    ${pts>=PRIZE_TARGET?'<div class="prize-banner"><span class="big">🏆🎉🏆</span>PRIZE ACHIEVED!</div>':''}
+    <div class="card"><div class="section-title">Training Calendar</div>${cal}</div>
+    <div class="card"><div class="section-title">Recent Sessions</div>${hist||'<p style="font-size:.8em;color:var(--light)">No sessions yet</p>'}</div>
+    ${!isCoach&&name===currentUser?'<button class="btn-secondary" onclick="switchPlayer()">🔄 Switch Player</button>':''}
+    ${isCoach?`<div style="margin-top:10px"><button class="btn-secondary" onclick="showPlayerSelect()">← View another player</button></div>`:''}`;
+}
+function showPlayerSelect(){
+  const players=getTeamPlayers();
+  const body=players.map(p=>`<div class="admin-row" style="cursor:pointer" onclick="closeModal();showProfile('${p}')"><span>${getEmoji(p)} ${p}</span><span>${getTotalPoints(p)} pts</span></div>`).join('');
+  showModal('Select Player',body,()=>{});
+}
+
+// ===== CHALLENGES (Moment & Drill of the Week) =====
+function renderChallenges(){
+  const moments=getMoments(),drills=getDrillsWeek();
+  const now=today();
+  let html='';
+  // Active moment of the week
+  const activeMoments=Object.entries(moments).filter(([,m])=>m.expiryDate>=now).sort((a,b)=>b[1].postedDate.localeCompare(a[1].postedDate));
+  html+='<div class="section-title">🌟 Moment of the Week</div>';
+  if(activeMoments.length===0)html+='<div class="card"><p style="font-size:.8em;color:var(--light)">No active moment this week — check back soon!</p></div>';
+  activeMoments.forEach(([id,m])=>{
+    const completed=!isCoach&&m.completions&&m.completions[currentUser];
+    html+=`<div class="challenge-card">
+      <h4>${m.title}</h4>
+      <p>${m.description||''}</p>
+      ${m.videoUrl?`<a href="${m.videoUrl}" target="_blank" style="color:var(--accent1);font-size:.8em">📺 Watch Video</a><br>`:''}
+      <div class="deadline">Expires: ${fmtDate(m.expiryDate)}</div>
+      ${completed?'<div class="completed">✅ Completed!</div>':(!isCoach?`<button class="btn-primary" style="margin-top:8px" onclick="completeMoment('${id}')">✅ I Did It!</button>`:'')}
+    </div>`;
+  });
+  // Active drill of the week
+  const activeDrills=Object.entries(drills).filter(([,d])=>d.expiryDate>=now).sort((a,b)=>b[1].postedDate.localeCompare(a[1].postedDate));
+  html+='<div class="section-title">🎯 Drill of the Week</div>';
+  if(activeDrills.length===0)html+='<div class="card"><p style="font-size:.8em;color:var(--light)">No active drill this week — check back soon!</p></div>';
+  activeDrills.forEach(([id,d])=>{
+    const completed=!isCoach&&d.completions&&d.completions[currentUser];
+    html+=`<div class="challenge-card">
+      <h4>${d.title}</h4>
+      <p>${d.description||''}</p>
+      ${d.videoUrl?`<a href="${d.videoUrl}" target="_blank" style="color:var(--accent1);font-size:.8em">📺 Watch Video</a><br>`:''}
+      <div class="deadline">Expires: ${fmtDate(d.expiryDate)}</div>
+      ${completed?'<div class="completed">✅ Completed!</div>':(!isCoach?`<button class="btn-primary" style="margin-top:8px" onclick="completeDrill('${id}')">✅ I Did It!</button>`:'')}
+    </div>`;
+  });
+  document.getElementById('challengesContent').innerHTML=html;
+}
+function completeMoment(id){
+  const m=getMoments();if(!m[id])return;
+  if(!m[id].completions)m[id].completions={};
+  m[id].completions[currentUser]={date:today()};
+  saveMoments(m);showToast('🌟 Moment completed! +1 bonus point!');fireConfetti('wc');renderChallenges();
+}
+function completeDrill(id){
+  const d=getDrillsWeek();if(!d[id])return;
+  if(!d[id].completions)d[id].completions={};
+  d[id].completions[currentUser]={date:today()};
+  saveDrillsWeek(d);showToast('🎯 Drill completed! +1 bonus point!');fireConfetti('default');renderChallenges();
+}
+
+// ===== NOTIFICATIONS =====
+function renderNotifications(){
+  if(isCoach){document.getElementById('notifications').innerHTML='';return}
+  const moments=getMoments(),drills=getDrillsWeek(),progress=getWcProgress(),team=getWcTeams()[currentUser];
+  const now=today();let notifs=[];
+  // Active moments not completed
+  Object.entries(moments).forEach(([id,m])=>{
+    if(m.expiryDate>=now&&(!m.completions||!m.completions[currentUser]))
+      notifs.push('🌟 New Moment of the Week: "'+m.title+'" — complete it for a bonus point!');
+  });
+  // Active drills not completed
+  Object.entries(drills).forEach(([id,d])=>{
+    if(d.expiryDate>=now&&(!d.completions||!d.completions[currentUser]))
+      notifs.push('🎯 New Drill of the Week: "'+d.title+'" — complete it for a bonus point!');
+  });
+  // WC progress
+  if(team){WC_ROUNDS.forEach(r=>{if(progress[r]&&progress[r].includes(team))notifs.push(`🏆 ${team} made it to the ${WC_ROUND_LABELS[r]}! Bonus point!`)});}
+  const el=document.getElementById('notifications');
+  if(!notifs.length){el.innerHTML='';return}
+  el.innerHTML=`<div class="notif-bar">${notifs.map(n=>`<div class="notif-item">${n}</div>`).join('')}</div>`;
+}
+
+// ===== ADMIN PANEL =====
+function renderAdmin(){
+  if(!isCoach)return;
+  const players=getTeamPlayers();
+  let html='';
+  // Player management
+  html+=`<div class="admin-card"><h4>👥 Players</h4>
+    ${players.map(p=>`<div class="admin-row"><span>${getEmoji(p)} ${p} ${getFlag(p)}</span><div><button onclick="adminResetPin('${p}')">Reset PIN</button><button onclick="adminDeletePlayer('${p}')">Remove</button></div></div>`).join('')}
+    <button class="btn-secondary" onclick="adminAddPlayer()">+ Add Player</button>
+  </div>`;
+  // WC Progress
+  html+=`<div class="admin-card"><h4>🏆 World Cup Progress</h4><p style="font-size:.75em;color:var(--light);margin-bottom:8px">Mark which teams (from girls' picks) have progressed</p>`;
+  const chosenTeams=[...new Set(Object.values(getWcTeams()))].sort();
+  const progress=getWcProgress();
+  WC_ROUNDS.forEach(r=>{
+    const inRound=progress[r]||[];
+    html+=`<div style="margin-bottom:8px"><strong style="color:var(--gold);font-size:.8em">${WC_ROUND_LABELS[r]}</strong>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+      ${chosenTeams.map(t=>{const flag=WC_TEAMS.find(w=>w.name===t)?.flag||'';const active=inRound.includes(t);
+        return `<button style="padding:4px 8px;border-radius:6px;font-size:.7em;cursor:pointer;border:1px solid ${active?'var(--green)':'rgba(124,58,237,.3)'};background:${active?'var(--green)':'rgba(124,58,237,.1)'};color:var(--white)" onclick="toggleWcProgress('${r}','${t}')">${flag}${t}</button>`}).join('')}
+      </div></div>`;
+  });
+  html+='</div>';
+  // Moment of the Week
+  html+=`<div class="admin-card"><h4>🌟 Moment of the Week</h4>
+    <button class="btn-secondary" onclick="adminAddMoment()">+ Add New Moment</button>
+    ${Object.entries(getMoments()).sort((a,b)=>b[1].postedDate.localeCompare(a[1].postedDate)).map(([id,m])=>
+      `<div class="admin-row"><span style="flex:1">${m.title} <span style="font-size:.7em;color:var(--light)">(${fmtDate(m.postedDate)})</span></span><button onclick="adminDeleteMoment('${id}')">Delete</button></div>`
+    ).join('')}
+  </div>`;
+  // Drill of the Week
+  html+=`<div class="admin-card"><h4>🎯 Drill of the Week</h4>
+    <button class="btn-secondary" onclick="adminAddDrill()">+ Add New Drill</button>
+    ${Object.entries(getDrillsWeek()).sort((a,b)=>b[1].postedDate.localeCompare(a[1].postedDate)).map(([id,d])=>
+      `<div class="admin-row"><span style="flex:1">${d.title} <span style="font-size:.7em;color:var(--light)">(${fmtDate(d.postedDate)})</span></span><button onclick="adminDeleteDrill('${id}')">Delete</button></div>`
+    ).join('')}
+  </div>`;
+  // Coach management
+  html+=`<div class="admin-card"><h4>🔧 Other</h4>
+    <button class="btn-secondary" onclick="switchPlayer()">🔄 Switch User</button>
+    <button class="btn-secondary" onclick="adminManageEntries()">📝 Manage Entries</button>
+    <button class="btn-secondary" onclick="switchPlayer();setTimeout(showSuperAdminLogin,100)">🌍 Global Admin (Manage Teams)</button>
+  </div>`;
+  document.getElementById('adminContent').innerHTML=html;
+}
+
+// Admin actions
+function adminResetPin(name){
+  showModal('Reset PIN',`<p>Reset PIN for ${name}? They'll need to set a new one next login.</p>`,()=>{
+    const pins=getPins();delete pins[name];savePins(pins);showToast('✅ PIN reset for '+name);renderAdmin();
+  },'Reset');
+}
+function adminDeletePlayer(name){
+  showModal('Remove Player',`<p>Remove ${name} from the challenge? Their data will be kept.</p>`,()=>{
+    const reg=getRegistry();const team=reg.teams[currentTeamId];
+    team.players=team.players.filter(p=>p!==name);saveRegistry(reg);showToast('✅ '+name+' removed');renderAdmin();
+  },'Remove');
+}
+function adminAddPlayer(){
+  const body=`<input type="text" id="newPlayerName" placeholder="Player name" style="margin-top:8px">`;
+  showModal('Add Player',body,()=>{
+    const name=document.getElementById('newPlayerName').value.trim();
+    if(!name)return showToast('❌ Enter a name',true);
+    const reg=getRegistry();const team=reg.teams[currentTeamId];
+    if(team.players.includes(name))return showToast('❌ Already exists',true);
+    team.players.push(name);saveRegistry(reg);
+    showToast('✅ '+name+' added!');renderAdmin();
+  },'Add');
+}
+function toggleWcProgress(round,team){
+  const progress=getWcProgress();
+  if(!progress[round])progress[round]=[];
+  if(progress[round].includes(team))progress[round]=progress[round].filter(t=>t!==team);
+  else progress[round].push(team);
+  saveWcProgress(progress);renderAdmin();
+}
+function adminAddMoment(){
+  const body=`<input type="text" id="momentTitle" placeholder="Title (e.g. Marta's skill vs Sweden)">
+    <textarea id="momentDesc" placeholder="Description (optional)"></textarea>
+    <input type="url" id="momentUrl" placeholder="Video URL (optional)">`;
+  showModal('Add Moment of the Week',body,()=>{
+    const title=document.getElementById('momentTitle').value.trim();
+    if(!title)return showToast('❌ Enter a title',true);
+    const m=getMoments();const id='m_'+Date.now();
+    const posted=today();const expiry=ds(new Date(new Date().getTime()+7*24*60*60*1000));
+    m[id]={title,description:document.getElementById('momentDesc').value,videoUrl:document.getElementById('momentUrl').value,postedDate:posted,expiryDate:expiry,completions:{}};
+    saveMoments(m);showToast('✅ Moment added!');renderAdmin();
+  },'Add');
+}
+function adminDeleteMoment(id){
+  showModal('Delete Moment','<p>Delete this moment of the week?</p>',()=>{
+    const m=getMoments();delete m[id];saveMoments(m);showToast('✅ Deleted');renderAdmin();
+  },'Delete');
+}
+function adminAddDrill(){
+  const body=`<input type="text" id="drillTitle" placeholder="Title (e.g. Cruyff Turn Challenge)">
+    <textarea id="drillDesc" placeholder="Description"></textarea>
+    <input type="url" id="drillUrl" placeholder="Video URL (optional)">`;
+  showModal('Add Drill of the Week',body,()=>{
+    const title=document.getElementById('drillTitle').value.trim();
+    if(!title)return showToast('❌ Enter a title',true);
+    const d=getDrillsWeek();const id='d_'+Date.now();
+    const posted=today();const expiry=ds(new Date(new Date().getTime()+7*24*60*60*1000));
+    d[id]={title,description:document.getElementById('drillDesc').value,videoUrl:document.getElementById('drillUrl').value,postedDate:posted,expiryDate:expiry,completions:{}};
+    saveDrillsWeek(d);showToast('✅ Drill added!');renderAdmin();
+  },'Add');
+}
+function adminDeleteDrill(id){
+  showModal('Delete Drill','<p>Delete this drill of the week?</p>',()=>{
+    const d=getDrillsWeek();delete d[id];saveDrillsWeek(d);showToast('✅ Deleted');renderAdmin();
+  },'Delete');
+}
+function adminManageEntries(){
+  const players=getTeamPlayers();
+  const body=players.map(p=>{
+    const days=Object.keys(getData()[p]||{}).sort().reverse().slice(0,5);
+    return `<div style="margin-bottom:8px"><strong style="color:var(--gold);font-size:.8em">${p}</strong>
+      ${days.map(d=>`<div class="admin-row"><span>${fmtDate(d)}</span><button onclick="closeModal();adminDeleteEntry('${p}','${d}')">Delete</button></div>`).join('')}
+      ${!days.length?'<div style="font-size:.75em;color:var(--light)">No entries</div>':''}
+    </div>`;
+  }).join('');
+  showModal('Manage Entries','<div style="max-height:50vh;overflow-y:auto">'+body+'</div>',()=>{},'Done');
+}
+function adminDeleteEntry(name,date){
+  showModal('Delete Entry',`<p>Delete ${name}'s entry for ${fmtDate(date)}?</p>`,()=>{
+    const data=getData();if(data[name])delete data[name][date];saveData(data);showToast('✅ Entry deleted');renderAdmin();
+  },'Delete');
+}
+
+// ===== SUPER ADMIN =====
+function renderSuperAdmin(){
+  const reg=getRegistry();const teams=reg.teams||{};
+  let html='';
+
+  // Create new team
+  html+=`<div class="admin-card"><h4>➕ Create New Team</h4>
+    <input type="text" id="newTeamName" placeholder="Team name (e.g. OLM U14s Reds)">
+    <input type="text" id="newTeamCoach" placeholder="Lead coach name">
+    <button class="btn-primary" onclick="superAdminCreateTeam()">Create Team</button>
+  </div>`;
+
+  // Manage existing teams
+  html+=`<div class="section-title">📋 All Teams</div>`;
+  Object.entries(teams).forEach(([id,t])=>{
+    html+=`<div class="admin-card"><h4>${t.name}</h4>
+      <div style="font-size:.8em;color:var(--light);margin-bottom:6px">Lead Coach: ${t.leadCoach} • Players: ${(t.players||[]).length} • Coaches: ${(t.coaches||[]).length}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-secondary" style="width:auto;margin:0;padding:6px 12px" onclick="superAdminViewTeam('${id}')">View</button>
+        <button class="btn-secondary" style="width:auto;margin:0;padding:6px 12px" onclick="superAdminAddCoach('${id}')">+ Coach</button>
+        <button class="btn-danger" style="width:auto;margin:0;padding:6px 12px" onclick="superAdminDeleteTeam('${id}')">Delete</button>
+      </div>
+    </div>`;
+  });
+
+  // Global WC Progress
+  html+=`<div class="section-title">🏆 World Cup Progress (All Teams)</div>`;
+  html+=`<div class="admin-card"><p style="font-size:.75em;color:var(--light);margin-bottom:8px">Mark which teams have progressed (from all girls' picks across all teams)</p>`;
+  // Collect all chosen WC teams across all teams
+  let allChosenTeams=new Set();
+  Object.keys(teams).forEach(tid=>{
+    const wcPicks=_load('olm-wc-'+tid+'-wcTeams');
+    Object.values(wcPicks).forEach(t=>allChosenTeams.add(t));
+  });
+  const chosenArr=[...allChosenTeams].sort();
+  const progress=getWcProgress();
+  WC_ROUNDS.forEach(r=>{
+    const inRound=progress[r]||[];
+    html+=`<div style="margin-bottom:8px"><strong style="color:var(--gold);font-size:.8em">${WC_ROUND_LABELS[r]}</strong>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+      ${chosenArr.map(t=>{const flag=WC_TEAMS.find(w=>w.name===t)?.flag||'';const active=inRound.includes(t);
+        return `<button style="padding:4px 8px;border-radius:6px;font-size:.7em;cursor:pointer;border:1px solid ${active?'var(--green-bright)':'rgba(21,101,192,.3)'};background:${active?'var(--green-bright)':'rgba(21,101,192,.1)'};color:var(--white)" onclick="toggleWcProgress('${r}','${t}')">${flag}${t}</button>`}).join('')}
+      </div></div>`;
+  });
+  html+='</div>';
+
+  // Overall OLM Leaderboard
+  html+=`<div class="section-title">🏅 Overall OLM Leaderboard</div>`;
+  html+=renderOverallLeaderboard();
+
+  // Switch user
+  html+=`<button class="btn-secondary" onclick="switchPlayer()">🔄 Log Out</button>`;
+
+  document.getElementById('superAdminContent').innerHTML=html;
+}
+
+function renderOverallLeaderboard(){
+  const teams=getAllTeams();let allPlayers=[];
+  Object.entries(teams).forEach(([tid,t])=>{
+    const data=_load('olm-wc-'+tid+'-data');
+    const wcPicks=_load('olm-wc-'+tid+'-wcTeams');
+    const moments=_load('olm-wc-'+tid+'-moments');
+    const drills=_load('olm-wc-'+tid+'-drillsWeek');
+    const progress=getWcProgress();
+    const sd=ds(START),ed=ds(END);
+    (t.players||[]).forEach(name=>{
+      const pData=data[name]||{};
+      const training=Object.keys(pData).filter(d=>d>=sd&&d<=ed).length;
+      let momentPts=0;Object.values(moments).forEach(m=>{if(m.completions&&m.completions[name])momentPts++});
+      let drillPts=0;Object.values(drills).forEach(d=>{if(d.completions&&d.completions[name])drillPts++});
+      const wcTeam=wcPicks[name];let wcPts=0;
+      if(wcTeam){WC_ROUNDS.forEach(r=>{if(progress[r]&&progress[r].includes(wcTeam))wcPts++});if(wcTeam==='Scotland')wcPts*=2}
+      const total=training+momentPts+drillPts+wcPts;
+      const flag=wcTeam?WC_TEAMS.find(w=>w.name===wcTeam)?.flag||'⚽':'⚽';
+      allPlayers.push({name,team:t.name,flag,points:total});
+    });
+  });
+  allPlayers.sort((a,b)=>b.points-a.points);
+  if(!allPlayers.length)return'<div class="card"><p style="font-size:.8em;color:var(--light)">No players yet</p></div>';
+  return '<div class="card">'+allPlayers.slice(0,20).map((p,i)=>{
+    const rank=i<3?['🥇','🥈','🥉'][i]:(i+1);
+    return `<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid rgba(21,101,192,.1);font-size:.85em">
+      <span style="width:28px;text-align:center;font-weight:700;${i<3?'color:var(--gold)':''}">${rank}</span>
+      <span style="font-size:1.3em;width:28px">${p.flag}</span>
+      <span style="flex:1;margin-left:6px">${p.name} <span style="font-size:.7em;color:var(--light)">(${p.team})</span></span>
+      <span style="color:var(--gold);font-weight:700">${p.points} pts</span></div>`;
+  }).join('')+'</div>';
+}
+
+function superAdminCreateTeam(){
+  const name=document.getElementById('newTeamName').value.trim();
+  const coach=document.getElementById('newTeamCoach').value.trim();
+  if(!name||!coach)return showToast('❌ Fill in team name and coach',true);
+  const reg=getRegistry();
+  const id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  if(reg.teams[id])return showToast('❌ Team already exists',true);
+  reg.teams[id]={name,leadCoach:coach,coaches:[],players:[]};
+  saveRegistry(reg);showToast('✅ Team created: '+name);renderSuperAdmin();
+}
+function superAdminDeleteTeam(id){
+  showModal('Delete Team','<p>Delete this team? This cannot be undone.</p>',()=>{
+    const reg=getRegistry();delete reg.teams[id];saveRegistry(reg);showToast('✅ Team deleted');renderSuperAdmin();
+  },'Delete');
+}
+function superAdminAddCoach(id){
+  const body=`<input type="text" id="newCoachName" placeholder="Coach name">`;
+  showModal('Add Coach',body,()=>{
+    const name=document.getElementById('newCoachName').value.trim();
+    if(!name)return showToast('❌ Enter a name',true);
+    const reg=getRegistry();
+    if(!reg.teams[id].coaches)reg.teams[id].coaches=[];
+    reg.teams[id].coaches.push(name);saveRegistry(reg);showToast('✅ Coach added');renderSuperAdmin();
+  },'Add');
+}
+function superAdminViewTeam(id){
+  setActiveTeam(id);renderSuperAdmin();showToast('👀 Viewing: '+getTeamInfo(id).name);
+}
+
+// ===== INIT =====
+function init(){
+  if(tryAutoLogin()){
+    const flag=isCoach?'🏆':getEmoji(currentUser);
+    const team=getWcTeams()[currentUser];
+    document.getElementById('welcomeMsg').innerHTML=isSuperAdmin?'🌍 Global Admin':(isCoach?'🏆 Coach Mode':`${flag} ${currentUser}${team?' — '+team:''}`);
+    buildTabs();document.getElementById('mainTabs').style.display='flex';
+    logDate=today();selectedDrills=[];renderDrillButtons();updateDateLabel();updateCountdown();
+    showPage(isSuperAdmin?'super-admin':'home');
+    renderNotifications();
+  }else{showTeamSelect()}
+  updateCountdown();
+}
+init();
+</script>
+</body>
+</html>
